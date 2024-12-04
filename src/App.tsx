@@ -4,7 +4,6 @@ import * as acorn from "acorn";
 import * as espree from "espree";
 import * as walk from "acorn-walk";
 
-
 // From acorn-jsx-walk
 function extend(base: any) {
   if (base === void 0) base = {};
@@ -71,30 +70,31 @@ interface IComponentNode {
   name: string;
   props: IPropNode[];
   states: IStateNode[];
-  effects: string[];
-  children: string[];
+  effects: IEffectNode[];
+  children: IComponentNode[];
   node: acorn.Node;
 }
 
 interface IStateNode {
   id: string;
   name: string;
-  root: string;
+  root: IComponentNode;
   setter: string;
 }
 
 interface IPropNode {
   id: string;
   name: string;
-  root: string;
+  references: string[];
+  root: IComponentNode;
 }
 
 interface IEffectNode {
   id: string;
   name: string;
-  root: string;
+  root: IComponentNode;
   body: acorn.Node;
-  dependencies: string[];
+  dependencyIds: string[];
 }
 
 class HookExtractor {
@@ -126,23 +126,23 @@ class HookExtractor {
   }
 
   private newComponentNode(name: string, node: acorn.Node) {
-    const id = this.newComponentId();
-    const states = this.findState(node, id);
-    const props = this.findProps(node, id);
-    return {
-      id: id,
+    const newComponent: IComponentNode = {
+      id: this.newComponentId(),
       name: name,
-      props: props,
-      states: states,
+      props: [],
+      states: [],
       effects: [],
       children: [],
       node: node,
     };
+    newComponent.states = this.findState(node, newComponent);
+    newComponent.props = this.findProps(node, newComponent);
+    return newComponent;
   }
 
-  private findState(component: acorn.Node, componentId: string) {
+  private findState(astComponent: acorn.Node, component: IComponentNode) {
     const states: IStateNode[] = [];
-    walk.fullAncestor(component, (node, state, ancestor) => {
+    walk.fullAncestor(astComponent, (node, state, ancestor) => {
       if (node.type !== "CallExpression") {
         return;
       }
@@ -162,7 +162,7 @@ class HookExtractor {
           .id as acorn.ArrayPattern;
         const name = (returnValue.elements[0] as acorn.Identifier).name;
         const setter = (returnValue.elements[1] as acorn.Identifier).name;
-        states.push(this.newStateNode(componentId, name, setter));
+        states.push(this.newStateNode(component, name, setter));
       }
     });
 
@@ -175,18 +175,18 @@ class HookExtractor {
     return "state_" + this.stateId;
   }
 
-  private newStateNode(root: string, name: string, setter: string) {
+  private newStateNode(root: IComponentNode, name: string, setter: string) {
     const id = this.newStateId();
     return { id, name, root, setter };
   }
 
-  private findProps(component: acorn.Node, componentId: string) {
-    console.log("findProps", component);
+  private findProps(astComponent: acorn.Node, component: IComponentNode) {
+    console.log("findProps", astComponent);
     const props: IPropNode[] = [];
     const params =
-      component.type === "ArrowFunctionExpression"
-        ? (component as acorn.ArrowFunctionExpression).params
-        : (component as acorn.FunctionDeclaration).params;
+      astComponent.type === "ArrowFunctionExpression"
+        ? (astComponent as acorn.ArrowFunctionExpression).params
+        : (astComponent as acorn.FunctionDeclaration).params;
 
     if (params.length === 0) {
       return props;
@@ -195,7 +195,7 @@ class HookExtractor {
       for (const property of (params[0] as acorn.ObjectPattern).properties) {
         if (property.type === "Property") {
           const name = (property.key as acorn.Identifier).name;
-          props.push(this.newPropNode(componentId, name));
+          props.push(this.newPropNode(component, name));
         }
       }
     }
@@ -209,9 +209,9 @@ class HookExtractor {
     return "prop_" + this.propId;
   }
 
-  private newPropNode(root: string, name: string) {
+  private newPropNode(root: IComponentNode, name: string) {
     const id = this.newPropId();
-    return { id, name, root };
+    return { id, name, references: [], root };
   }
 
   private getArrowFunctionName(ancestors: acorn.Node[]) {
@@ -284,13 +284,41 @@ class HookExtractor {
     for (const attribute of openingElement.attributes) {
       if (attribute.type === "JSXAttribute") {
         const name = attribute.name.name;
-        const target = component.props.find((prop) => prop.name === name);
+        let target = component.props.find((prop) => prop.name === name);
 
         if (!target) {
-          console.log("target", component, attribute);
-          const prop = this.newPropNode(component.id, name);
-          component.props.push(prop);
-          this.propList.push(prop);
+          console.log("Props target", component, attribute);
+          target = this.newPropNode(component, name);
+          component.props.push(target);
+          this.propList.push(target);
+        }
+
+        if (target) {
+          const expression = attribute.value.expression;
+          if (expression.type === "Identifier") {
+            const name = (expression as acorn.Identifier).name;
+            const reference =
+              this.getStateByName(name) || this.getPropByName(name);
+            if (reference) {
+              target.references.push(reference.id);
+            }
+          } else if (expression.type === "MemberExpression") {
+            const property = (expression as acorn.MemberExpression).property;
+            walk.simple(
+              property,
+              {
+                Identifier: (node, state) => {
+                  const reference =
+                    this.getStateByName(name) || this.getPropByName(name);
+                  if (reference) {
+                    state.references.push(reference.id);
+                  }
+                },
+              },
+              walk.base,
+              target
+            );
+          }
         }
       }
     }
@@ -309,7 +337,7 @@ class HookExtractor {
           if (target) {
             console.log("target", component, target, openingElement);
             this.findAttribute(target, openingElement);
-            component.children.push(target.id);
+            component.children.push(target);
           }
         }
       });
@@ -317,11 +345,10 @@ class HookExtractor {
   }
 
   private findEffects(component: IComponentNode) {
-    const componentASTNode = component.node;
-    const componentId = component.id;
+    const astComponent = component.node;
 
     const effects: IEffectNode[] = [];
-    walk.fullAncestor(componentASTNode, (node, state, ancestor) => {
+    walk.fullAncestor(astComponent, (node, state, ancestor) => {
       if (node.type === "CallExpression") {
         const callee = (node as acorn.CallExpression).callee;
         if (callee.type === "Identifier") {
@@ -329,38 +356,38 @@ class HookExtractor {
           if (name === "useEffect") {
             console.log("useEffect", node);
             const args = (node as acorn.CallExpression).arguments;
-            // console.log(
-            //   "test",
-            //   (args[1] as acorn.ArrayExpression).elements,
-            //   component.states,
-            //   component.props
-            // );
-            const dependencies = args[1] ? (args[1] as acorn.ArrayExpression).elements
-              .filter(
-                (element) =>
-                  component.states.find(
-                    (state) => state.name === (element as acorn.Identifier).name
-                  ) ||
-                  component.props.find(
-                    (prop) => prop.name === (element as acorn.Identifier).name
+            const dependencieIds = args[1]
+              ? (args[1] as acorn.ArrayExpression).elements
+                  .filter(
+                    (element) =>
+                      component.states.find(
+                        (state) =>
+                          state.name === (element as acorn.Identifier).name
+                      ) ||
+                      component.props.find(
+                        (prop) =>
+                          prop.name === (element as acorn.Identifier).name
+                      )
                   )
-              )
-              .map(
-                (element) =>
-                  (component.states.find(
-                    (state) => state.name === (element as acorn.Identifier).name
-                  )?.id ||
-                    component.props.find(
-                      (prop) => prop.name === (element as acorn.Identifier).name
-                    )?.id) as string
-              ) : [];
+                  .map(
+                    (element) =>
+                      (component.states.find(
+                        (state) =>
+                          state.name === (element as acorn.Identifier).name
+                      )?.id ||
+                        component.props.find(
+                          (prop) =>
+                            prop.name === (element as acorn.Identifier).name
+                        )?.id) as string
+                  )
+              : [];
 
-            console.log("dependency", dependencies);
+            console.log("dependency", dependencieIds);
             const effect = this.newEffectNode(
-              componentId,
+              component,
               name,
               args[0],
-              dependencies
+              dependencieIds
             );
             effects.push(effect);
           }
@@ -368,9 +395,7 @@ class HookExtractor {
       }
     });
 
-    component.effects = component.effects.concat(
-      effects.map((effect) => effect.id)
-    );
+    component.effects = component.effects.concat(effects);
     this.effectList = this.effectList.concat(effects);
     return effects;
   }
@@ -381,19 +406,19 @@ class HookExtractor {
   }
 
   private newEffectNode(
-    root: string,
+    root: IComponentNode,
     name: string,
     body: acorn.Node,
-    dependencies: string[]
+    dependencyIds: string[]
   ) {
     const id = this.newEffectId();
-    return { id, name, root, body, dependencies };
+    return { id, name, root, body, dependencyIds };
   }
 
   public linkEffects() {
     for (const component of this.componentList) {
       const effects = this.findEffects(component);
-      component.effects = effects.map((effect) => effect.id);
+      component.effects = effects;
     }
   }
 
@@ -403,19 +428,114 @@ class HookExtractor {
     console.log("Props", this.propList);
     console.log("Effects", this.effectList);
   }
+
+  public getComponentById(id: string) {
+    return this.componentList.find((component) => component.id === id);
+  }
+
+  public getStateById(id: string) {
+    return this.stateList.find((state) => state.id === id);
+  }
+
+  public getPropById(id: string) {
+    return this.propList.find((prop) => prop.id === id);
+  }
+
+  public getEffectById(id: string) {
+    return this.effectList.find((effect) => effect.id === id);
+  }
+
+  public getComponentByName(name: string) {
+    return this.componentList.find((component) => component.name === name);
+  }
+
+  public getStateByName(name: string) {
+    return this.stateList.find((state) => state.name === name);
+  }
+
+  public getPropByName(name: string) {
+    return this.propList.find((prop) => prop.name === name);
+  }
+
+  public getEffectByName(name: string) {
+    return this.effectList.find((effect) => effect.name === name);
+  }
+
+  public toJson() {
+    const componentList = {
+      total: this.componentList.length,
+      items: this.componentList.map((component) => {
+        return {
+          id: component.id,
+          name: component.name,
+          props: component.props.map((prop) => prop.id),
+          states: component.states.map((state) => state.id),
+          effects: component.effects.map((effect) => effect.id),
+          children: component.children.map((child) => child.id),
+        };
+      }),
+    };
+
+    const stateList = {
+      total: this.stateList.length,
+      items: this.stateList.map((state) => {
+        return {
+          id: state.id,
+          name: state.name,
+          root: state.root.id,
+        };
+      }),
+    };
+
+    const effectList = {
+      total: this.effectList.length,
+      items: this.effectList.map((effect) => {
+        return {
+          id: effect.id,
+          root: effect.root.id,
+          dependencyIds: effect.dependencyIds,
+        };
+      }),
+    };
+
+    const propList = {
+      total: this.propList.length,
+      items: this.propList.map((prop) => {
+        return {
+          id: prop.id,
+          name: prop.name,
+          root: prop.root.id,
+        };
+      }),
+    };
+
+    const json = {
+      componentList,
+      stateList,
+      effectList,
+      propList,
+    };
+
+    return JSON.stringify(json, null, 2);
+  }
 }
 
 function App() {
   const hookExtractor = new HookExtractor();
 
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const asts: {filePath: string, ast: acorn.Node}[] = []
+  const asts: { filePath: string; ast: acorn.Node }[] = [];
 
   useEffect(() => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
     const handleFileUpload = (event: Event) => {
-      if (inputRef.current && inputRef.current.files) {
-        console.log("inputRef", inputRef.current.files);
-        const files = inputRef.current.files;
+      if (input.files) {
+        console.log("inputRef", input.files);
+        const files = input.files;
         const promises = [];
         for (let i = 0; i < files.length; i++) {
           if (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx")) {
@@ -432,26 +552,23 @@ function App() {
                 jsx: true,
               },
             });
-            asts.push({filePath: "", ast: ast});
+            asts.push({ filePath: "", ast: ast });
             hookExtractor.extract(ast);
           }
 
           hookExtractor.linkComponents();
           hookExtractor.linkEffects();
           hookExtractor.print();
+          console.log(hookExtractor.toJson());
         });
       }
-    }
+    };
 
-    if (inputRef.current) {
-      inputRef.current.addEventListener("change", handleFileUpload);
-    }
+    input.addEventListener("change", handleFileUpload);
 
     return () => {
-      if (inputRef.current) {
-        inputRef.current.removeEventListener("change", handleFileUpload);
-      }
-    }
+      input.removeEventListener("change", handleFileUpload);
+    };
   }, [inputRef]);
 
   return (
@@ -464,7 +581,7 @@ function App() {
 
 declare module "react" {
   interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
-      webkitdirectory?: string;
+    webkitdirectory?: string;
   }
 }
 
