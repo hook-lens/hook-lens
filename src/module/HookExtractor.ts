@@ -212,7 +212,9 @@ export default class HookExtractor {
   public setProject(files: { source: string; content: string }[]) {
     console.info("setProject", files);
     for (const file of files) {
-      this.extractComponents(file.source, file.content);
+      if (!file.source.includes("node_modules")) {
+        this.extractComponents(file.source, file.content);
+      }
     }
 
     this.linkComponents();
