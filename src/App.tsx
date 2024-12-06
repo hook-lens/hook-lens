@@ -21,7 +21,7 @@ function App() {
       const files = input.files;
       const promises = [];
       for (let i = 0; i < files.length; i++) {
-        if (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx")) {
+        if (!files[i].webkitRelativePath.includes("node_modules") && (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx"))) {
           promises.push(
             files[i].text().then((text) => ({
               source: files[i].webkitRelativePath,
