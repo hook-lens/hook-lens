@@ -57,23 +57,23 @@ export class ComponentNode {
     }
   }
 
-  public findStateById(id: string) {
+  public getStateById(id: string) {
     return this.states.find((state) => state.id === id);
   }
 
-  public findStateByName(name: string) {
+  public getStateByName(name: string) {
     return this.states.find((state) => state.name === name);
   }
 
-  public findPropById(id: string) {
+  public getPropById(id: string) {
     return this.props.find((prop) => prop.id === id);
   }
 
-  public findPropByName(name: string) {
+  public getPropByName(name: string) {
     return this.props.find((prop) => prop.name === name);
   }
 
-  public findChildById(id: string) {
+  public getChildById(id: string) {
     return this.children.find((child) => child.id === id);
   }
 }
@@ -311,34 +311,48 @@ export default class HookExtractor {
     node: acorn.Node
   ) {
     const newComponent = new ComponentNode(name, path, fileAst, node);
-    newComponent.states = this.findState(node, newComponent);
-    newComponent.props = this.findProps(node, newComponent);
+    newComponent.states = this.extractStates(node, newComponent);
+    newComponent.props = this.extractProps(node, newComponent);
 
     this.componentList.push(newComponent);
     return newComponent;
   }
 
-  private findState(astComponent: acorn.Node, component: ComponentNode) {
+  private extractStates(astComponent: acorn.Node, component: ComponentNode) {
+    console.log("extractStates", astComponent);
     const states: StateNode[] = [];
+    const isCalleeUseState = (callee: acorn.Expression | acorn.Super) => {
+      if (callee.type === "Identifier") {
+        return (callee as acorn.Identifier).name === "useState";
+      }
+
+      if (callee.type === "MemberExpression") {
+        return (callee.property as acorn.Identifier).name === "useState";
+      }
+
+      return false;
+    };
+
     walk.fullAncestor(astComponent, (node, state, ancestor) => {
       if (node.type !== "CallExpression") {
         return;
       }
 
-      const callee = (node as acorn.CallExpression).callee;
-      if (callee.type === "Identifier" && callee.name === "useState") {
-        console.log("CallExpression", node, ancestor.slice(0));
-        const parent = ancestor[ancestor.length - 2];
-        if (!parent || parent.type !== "VariableDeclarator") {
-          return;
-        }
-
-        const returnValue = (parent as acorn.VariableDeclarator)
-          .id as acorn.ArrayPattern;
-        const name = (returnValue.elements[0] as acorn.Identifier).name;
-        const setter = (returnValue.elements[1] as acorn.Identifier).name;
-        states.push(this.newStateNode(component, name, setter));
+      if (!isCalleeUseState((node as acorn.CallExpression).callee)) {
+        return;
       }
+
+      console.log("CallExpression", node, ancestor.slice(0));
+      const parent = ancestor[ancestor.length - 2];
+      if (!parent || parent.type !== "VariableDeclarator") {
+        return;
+      }
+
+      const returnValue = (parent as acorn.VariableDeclarator)
+        .id as acorn.ArrayPattern;
+      const name = (returnValue.elements[0] as acorn.Identifier).name;
+      const setter = (returnValue.elements[1] as acorn.Identifier).name;
+      states.push(this.newStateNode(component, name, setter));
     });
 
     return states;
@@ -351,8 +365,8 @@ export default class HookExtractor {
     return newState;
   }
 
-  private findProps(astComponent: acorn.Node, component: ComponentNode) {
-    console.log("findProps", astComponent);
+  private extractProps(astComponent: acorn.Node, component: ComponentNode) {
+    console.log("extractProps", astComponent);
     const props: PropNode[] = [];
     const params =
       astComponent.type === "ArrowFunctionExpression"
@@ -474,7 +488,7 @@ export default class HookExtractor {
       );
 
       importedComponents.forEach((id) => {
-        if (component.findChildById(id)) {
+        if (component.getChildById(id)) {
           return;
         }
 
@@ -496,7 +510,7 @@ export default class HookExtractor {
       }
 
       const name = attribute.name.name;
-      let target = component.findPropByName(name);
+      let target = component.getPropByName(name);
 
       if (!target) {
         console.log("Props target", component, attribute);
@@ -562,14 +576,13 @@ export default class HookExtractor {
             .filter((element) => {
               const name = (element as acorn.Identifier).name;
               return (
-                component.findStateByName(name) ||
-                component.findPropByName(name)
+                component.getStateByName(name) || component.getPropByName(name)
               );
             })
             .map((element) => {
               const name = (element as acorn.Identifier).name;
-              return (component.findStateByName(name)?.id ||
-                component.findPropByName(name)?.id) as string;
+              return (component.getStateByName(name)?.id ||
+                component.getPropByName(name)?.id) as string;
             })
         : [];
 
