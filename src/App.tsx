@@ -2,13 +2,14 @@ import React, { useEffect } from "react";
 import "./App.css";
 import * as acorn from "acorn";
 import HookExtractor from "./module/HookExtractor";
-
+import System from "./component/System";
 
 function App() {
   const hookExtractor = new HookExtractor();
 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const asts: { filePath: string; ast: acorn.Node }[] = [];
+  const [data, setData] = React.useState<any>(null);
 
   useEffect(() => {
     const input = inputRef.current;
@@ -38,6 +39,7 @@ function App() {
           hookExtractor.linkEffects();
           hookExtractor.print();
           console.log(hookExtractor.toJson());
+          setData(hookExtractor.toJson());
         });
       }
     };
@@ -53,6 +55,7 @@ function App() {
     <div className="App">
       <div>Hello world</div>
       <input type="file" webkitdirectory="" ref={inputRef}></input>
+      <System data={data} />
     </div>
   );
 }
