@@ -18,6 +18,7 @@
     "acorn-jsx-walk": "^2.0.0",
     "acorn-typescript": "^1.4.13",
     "acorn-walk": "^8.3.4",
+    "d3": "^7.9.0",
     "espree": "^10.3.0",
     "fs": "^0.0.1-security",
     "react": "^18.3.1",
