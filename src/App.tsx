@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
 
 function App() {
+  const [isVisualizationPage, setIsVisualizationPage] = useState(false);
+  const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
   const hookExtractor = new HookExtractor();
-
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const input = inputRef.current;
@@ -13,29 +14,34 @@ function App() {
       return;
     }
 
-    const handleFileUpload = (event: Event) => {
-      if (!input.files) {
-        return;
+    const handleFileUpload = () => {
+      if (input.files && input.files.length > 0) {
+        setIsVisualizationEnabled(true);
+      } else {
+        setIsVisualizationEnabled(false);
       }
 
-      const files = input.files;
-      const promises = [];
-      for (let i = 0; i < files.length; i++) {
-        if (!files[i].webkitRelativePath.includes("node_modules") && (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx"))) {
-          promises.push(
-            files[i].text().then((text) => ({
-              source: files[i].webkitRelativePath,
-              content: text,
-            }))
-          );
+      if (input.files) {
+        const files = input.files;
+        const promises = [];
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx")) {
+            promises.push(files[i].text());
+          }
         }
-      }
 
-      Promise.all(promises).then((results) => {
-        hookExtractor.setProject(results);
-        hookExtractor.print();
-        console.log(hookExtractor.toJson());
-      });
+        Promise.all(promises).then((texts) => {
+          texts.forEach((text, index) => {
+            const filePath = input.files![index].name;
+            hookExtractor.extractComponents(filePath, text);
+          });
+
+          hookExtractor.linkComponents();
+          hookExtractor.linkEffects();
+          hookExtractor.print();
+          console.log(hookExtractor.toJson());
+        });
+      }
     };
 
     input.addEventListener("change", handleFileUpload);
@@ -46,9 +52,25 @@ function App() {
   }, [inputRef]);
 
   return (
-    <div className="App">
-      <div>Hello world</div>
-      <input type="file" webkitdirectory="" ref={inputRef}></input>
+    <div className={`App ${isVisualizationPage ? "visualization-page" : "upload-page"}`}>
+      {isVisualizationPage ? (
+        <div className="Visualization">
+          <h1>Visualization Page</h1>
+          {/* 시각화 */}
+        </div>
+      ) : (
+        <div className="Upload">
+          <h1>HookLens</h1>
+          <label htmlFor="file-input">Select Files</label>
+          <input type="file" id="file-input" webkitdirectory="" ref={inputRef}></input>
+          <button
+            onClick={() => setIsVisualizationPage(true)}
+            disabled={!isVisualizationEnabled}
+          >
+            Go to Visualization
+          </button>
+        </div>
+      )}
     </div>
   );
 }
