@@ -47,6 +47,10 @@ export interface ComponentProps {
   children: string[];
 }
 
+export interface HierarchyComponent extends Omit<ComponentProps, "children"> {
+  children: HierarchyComponent[];
+}
+
 export interface ComponentListProps {
   total: number;
   items: ComponentProps[];
