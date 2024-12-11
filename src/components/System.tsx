@@ -141,7 +141,7 @@ const System = ({ data }: SystemProps) => {
   };
 
   return (
-    <div style={{ width: "100%", height: "800px" }}>
+    <div style={{ width: "100%", height: "100vh" }}>
       <Tree
         data={treeData}
         orientation="horizontal"
