@@ -16,6 +16,7 @@ function FilteredPaginatedItems({
     React.useState([]);
   const [filteredItemOffset, setFilteredItemOffset] = React.useState(0);
   const scrollToRef = useRef();
+
   useEffect(() => {
     const filteredEndOffset = filteredItemOffset + itemsPerPage;
     setCurrentFilteredAlcoholList(
@@ -23,6 +24,7 @@ function FilteredPaginatedItems({
     );
     setPageCount(Math.ceil(alcoholList.length / itemsPerPage));
   }, [alcoholList, filteredItemOffset, itemsPerPage]);
+
   const handlePageClick = (event) => {
     const newOffset = (event.selected * itemsPerPage) % alcoholList.length;
     setFilteredItemOffset(newOffset);

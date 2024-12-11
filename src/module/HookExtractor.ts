@@ -65,6 +65,10 @@ export class ComponentNode {
     return this.states.find((state) => state.name === name);
   }
 
+  public getStateBySetter(setter: string) {
+    return this.states.find((state) => state.setter === setter);
+  }
+
   public getPropById(id: string) {
     return this.props.find((prop) => prop.id === id);
   }
@@ -118,18 +122,21 @@ export class EffectNode {
   readonly name: string;
   readonly root: ComponentNode;
   readonly body: acorn.Node;
+  readonly handlingTargetIds: string[];
   readonly dependencyIds: string[];
 
   constructor(
     name: string,
     root: ComponentNode,
     body: acorn.Node,
+    handlingTargetIds: string[],
     dependencyIds: string[]
   ) {
     this.id = EffectNode.idGenerator.next();
     this.name = name;
     this.root = root;
     this.body = body;
+    this.handlingTargetIds = handlingTargetIds;
     this.dependencyIds = dependencyIds;
   }
 }
@@ -195,11 +202,11 @@ function extend(base: any) {
 }
 
 export default class HookExtractor {
-  componentList: ComponentNode[];
-  stateList: StateNode[];
-  propList: PropNode[];
-  effectList: EffectNode[];
-  asts: { source: string; ast: acorn.Node; defaultModule: string }[];
+  readonly componentList: ComponentNode[];
+  readonly stateList: StateNode[];
+  readonly propList: PropNode[];
+  readonly effectList: EffectNode[];
+  readonly asts: { source: string; ast: acorn.Node; defaultModule: string }[];
 
   constructor() {
     this.componentList = [];
@@ -478,7 +485,7 @@ export default class HookExtractor {
         }
 
         console.log("linkComponents", component, target, openingElement);
-        this.findAttribute(target, openingElement);
+        this.extractAttributes(target, openingElement);
         component.children.push(target);
       });
 
@@ -502,8 +509,8 @@ export default class HookExtractor {
     });
   }
 
-  private findAttribute(component: ComponentNode, openingElement: any) {
-    console.info("findAttribute", component, openingElement);
+  private extractAttributes(component: ComponentNode, openingElement: any) {
+    console.info("extractAttribute", component, openingElement);
     for (const attribute of openingElement.attributes) {
       if (attribute.type !== "JSXAttribute") {
         return;
@@ -511,46 +518,51 @@ export default class HookExtractor {
 
       const name = attribute.name.name;
       let target = component.getPropByName(name);
-
-      if (!target) {
-        console.log("Props target", component, attribute);
-        target = this.newPropNode(component, name);
-        component.props.push(target);
-      }
-
       if (!target) {
         return;
       }
 
+      if (!component.getPropById(target.id)) {
+        console.log("Props target", component, attribute);
+        component.props.push(target);
+      }
+
       const expression = attribute.value.expression;
-      if (expression.type === "Identifier") {
-        const name = (expression as acorn.Identifier).name;
-        const reference = this.getStateByName(name) || this.getPropByName(name);
-        if (reference) {
+      const findAndPushReferenceId = (name: string) => {
+        const reference =
+          this.getStateByName(name) ||
+          this.getStateBySetter(name) ||
+          this.getPropByName(name);
+
+        if (
+          target &&
+          reference &&
+          reference.id !== target.id &&
+          !target.references.includes(reference.id)
+        ) {
           target.references.push(reference.id);
         }
+      };
+
+      if (expression.type === "Identifier") {
+        findAndPushReferenceId((expression as acorn.Identifier).name);
       } else if (expression.type === "MemberExpression") {
         const property = (expression as acorn.MemberExpression).property;
-        walk.simple(
-          property,
-          {
-            Identifier: (node, state) => {
-              const name = node.name;
-              const reference =
-                this.getStateByName(name) || this.getPropByName(name);
-              if (reference) {
-                state.references.push(reference.id);
-              }
-            },
-          },
-          walk.base,
-          target
-        );
+        walk.simple(property, {
+          Identifier: (node) => findAndPushReferenceId(node.name),
+        });
       }
     }
   }
 
-  private findEffects(component: ComponentNode) {
+  public linkEffects() {
+    this.componentList.forEach((component) => {
+      const effects = this.extractEffects(component);
+      component.effects = effects;
+    });
+  }
+
+  private extractEffects(component: ComponentNode) {
     const astComponent = component.node;
 
     const effects: EffectNode[] = [];
@@ -560,16 +572,12 @@ export default class HookExtractor {
       }
 
       const callee = (node as acorn.CallExpression).callee;
-      if (callee.type !== "Identifier") {
+      if (callee.type !== "Identifier" || callee.name !== "useEffect") {
         return;
       }
 
       const name = callee.name;
-      if (name !== "useEffect") {
-        return;
-      }
-
-      console.log("useEffect", node);
+      console.log("extractEffects", node);
       const args = (node as acorn.CallExpression).arguments;
       const dependencieIds = args[1]
         ? (args[1] as acorn.ArrayExpression).elements
@@ -587,10 +595,12 @@ export default class HookExtractor {
         : [];
 
       console.log("dependency", dependencieIds);
+      const handlingTargetIds = this.extractCallExpression(component, args[0]);
       const effect = this.newEffectNode(
         component,
         name,
         args[0],
+        handlingTargetIds,
         dependencieIds
       );
       effects.push(effect);
@@ -599,22 +609,51 @@ export default class HookExtractor {
     return effects;
   }
 
+  private extractCallExpression(
+    component: ComponentNode,
+    effectBody: acorn.Expression | acorn.SpreadElement
+  ) {
+    const handlingTargetIds: string[] = [];
+    const findAndPushReferenceId = (name: string) => {
+      const reference =
+        component.getStateBySetter(name) || component.getPropByName(name);
+      if (reference && !handlingTargetIds.includes(reference.id)) {
+        handlingTargetIds.push(reference.id);
+      }
+    };
+
+    walk.simple(effectBody, {
+      CallExpression: (node) => {
+        const callee = node.callee;
+        if (callee.type === "Identifier") {
+          findAndPushReferenceId((callee as acorn.Identifier).name);
+        } else if (callee.type === "MemberExpression") {
+          walk.simple((callee as acorn.MemberExpression).property, {
+            Identifier: (node) => findAndPushReferenceId(node.name),
+          });
+        }
+      },
+    });
+
+    return handlingTargetIds;
+  }
+
   private newEffectNode(
     root: ComponentNode,
     name: string,
     body: acorn.Node,
+    handlingTargetIds: string[],
     dependencyIds: string[]
   ) {
-    const newEffect = new EffectNode(name, root, body, dependencyIds);
+    const newEffect = new EffectNode(
+      name,
+      root,
+      body,
+      handlingTargetIds,
+      dependencyIds
+    );
     this.effectList.push(newEffect);
     return newEffect;
-  }
-
-  public linkEffects() {
-    this.componentList.forEach((component) => {
-      const effects = this.findEffects(component);
-      component.effects = effects;
-    });
   }
 
   public print() {
@@ -623,37 +662,45 @@ export default class HookExtractor {
     console.log("Props", this.propList);
     console.log("Effects", this.effectList);
 
-    this.componentList.forEach((component) => {
-      console.log("Chidren count", component, this.countChidren(component));
-    });
+    console.log(
+      "Chidren count",
+      this.componentList.map((component) => ({
+        component: component,
+        count: this.countChidren(component),
+      }))
+    );
   }
 
   public getComponentById(id: string) {
     return this.componentList.find((component) => component.id === id);
   }
 
-  public getStateById(id: string) {
-    return this.stateList.find((state) => state.id === id);
-  }
-
-  public getPropById(id: string) {
-    return this.propList.find((prop) => prop.id === id);
-  }
-
-  public getEffectById(id: string) {
-    return this.effectList.find((effect) => effect.id === id);
-  }
-
   public getComponentByName(name: string) {
     return this.componentList.find((component) => component.name === name);
+  }
+
+  public getStateById(id: string) {
+    return this.stateList.find((state) => state.id === id);
   }
 
   public getStateByName(name: string) {
     return this.stateList.find((state) => state.name === name);
   }
 
+  public getStateBySetter(setter: string) {
+    return this.stateList.find((state) => state.setter === setter);
+  }
+
+  public getPropById(id: string) {
+    return this.propList.find((prop) => prop.id === id);
+  }
+
   public getPropByName(name: string) {
     return this.propList.find((prop) => prop.name === name);
+  }
+
+  public getEffectById(id: string) {
+    return this.effectList.find((effect) => effect.id === id);
   }
 
   public getEffectByName(name: string) {
