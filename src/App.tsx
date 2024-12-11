@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
 import System from "./components/System";
 import { DataProps } from "./types/data";
 
 function App() {
+  const [isVisualizationPage, setIsVisualizationPage] = useState(false);
+  const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
   const hookExtractor = new HookExtractor();
 
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [data, setData] = useState<DataProps>();
 
   useEffect(() => {
@@ -16,9 +19,11 @@ function App() {
       return;
     }
 
-    const handleFileUpload = (event: Event) => {
-      if (!input.files) {
-        return;
+    const handleFileUpload = () => {
+      if (input.files && input.files.length > 0) {
+        setIsVisualizationEnabled(true);
+      } else {
+        setIsVisualizationEnabled(false);
       }
 
       const files = input.files;
@@ -35,7 +40,6 @@ function App() {
             }))
           );
         }
-      }
 
       Promise.all(promises).then((results) => {
         hookExtractor.setProject(results);
@@ -54,10 +58,26 @@ function App() {
   }, [inputRef]);
 
   return (
-    <div className="App">
-      <div>Hello world</div>
-      <input type="file" webkitdirectory="" ref={inputRef}></input>
-      {data && <System data={data} />}
+    <div className={`App ${isVisualizationPage ? "visualization-page" : "upload-page"}`}>
+      {isVisualizationPage ? (
+        <div className="Visualization">
+          <System data={data} />
+          {/* 시각화 */}
+        </div>
+      ) : (
+        <div className="Upload">
+          <h1>HookLens</h1>
+          <label htmlFor="file-input">Select Files</label>
+          <input type="file" id="file-input" webkitdirectory="" ref={inputRef}></input>
+          <button
+            onClick={() => setIsVisualizationPage(true)}
+            disabled={!isVisualizationEnabled}
+          >
+            Go to Visualization
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
