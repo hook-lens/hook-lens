@@ -22,6 +22,12 @@ function App() {
   const [filteredItemOffset, setFilteredItemOffset] = useState(0);
   const [filteredItemsId, setFilteredItemsId] = useState(0);
 
+  // Test useEffect  
+  useEffect(function () {
+    console.log("Test3");
+    setCategory(1);
+  });
+
   return (
     <div className="App">
       <BrowserRouter>
