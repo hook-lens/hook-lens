@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
+
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
+import System from "./components/System";
+import { DataProps } from "./types/data";
 
 function App() {
   const [isVisualizationPage, setIsVisualizationPage] = useState(false);
   const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
   const hookExtractor = new HookExtractor();
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const [data, setData] = useState<DataProps>();
 
   useEffect(() => {
     const input = inputRef.current;
@@ -21,27 +26,28 @@ function App() {
         setIsVisualizationEnabled(false);
       }
 
-      if (input.files) {
-        const files = input.files;
-        const promises = [];
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx")) {
-            promises.push(files[i].text());
-          }
+      const files = input.files;
+      const promises = [];
+      for (let i = 0; i < files.length; i++) {
+        if (
+          !files[i].webkitRelativePath.includes("node_modules") &&
+          (files[i].name.endsWith(".js") || files[i].name.endsWith(".jsx"))
+        ) {
+          promises.push(
+            files[i].text().then((text) => ({
+              source: files[i].webkitRelativePath,
+              content: text,
+            }))
+          );
         }
 
-        Promise.all(promises).then((texts) => {
-          texts.forEach((text, index) => {
-            const filePath = input.files![index].name;
-            hookExtractor.extractComponents(filePath, text);
-          });
-
-          hookExtractor.linkComponents();
-          hookExtractor.linkEffects();
-          hookExtractor.print();
-          console.log(hookExtractor.toJson());
-        });
-      }
+      Promise.all(promises).then((results) => {
+        hookExtractor.setProject(results);
+        hookExtractor.print();
+        console.log(hookExtractor.toJson());
+        const data = hookExtractor.toJson();
+        setData(JSON.parse(data) as DataProps);
+      });
     };
 
     input.addEventListener("change", handleFileUpload);
@@ -55,7 +61,7 @@ function App() {
     <div className={`App ${isVisualizationPage ? "visualization-page" : "upload-page"}`}>
       {isVisualizationPage ? (
         <div className="Visualization">
-          <h1>Visualization Page</h1>
+          <System data={data} />
           {/* 시각화 */}
         </div>
       ) : (
@@ -71,6 +77,7 @@ function App() {
           </button>
         </div>
       )}
+
     </div>
   );
 }
