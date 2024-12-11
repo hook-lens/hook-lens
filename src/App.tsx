@@ -15,12 +15,17 @@ function App() {
 
   useEffect(() => {
     const input = inputRef.current;
+
     if (!input) {
       return;
     }
 
-    const handleFileUpload = () => {
-      if (input.files && input.files.length > 0) {
+    const handleFileUpload = (event: Event) => {
+      if (!input.files) {
+        return;
+      }
+
+      if (input.files.length > 0) {
         setIsVisualizationEnabled(true);
       } else {
         setIsVisualizationEnabled(false);
@@ -40,6 +45,7 @@ function App() {
             }))
           );
         }
+      }
 
       Promise.all(promises).then((results) => {
         hookExtractor.setProject(results);
@@ -58,8 +64,12 @@ function App() {
   }, [inputRef]);
 
   return (
-    <div className={`App ${isVisualizationPage ? "visualization-page" : "upload-page"}`}>
-      {isVisualizationPage ? (
+    <div
+      className={`App ${
+        isVisualizationPage ? "visualization-page" : "upload-page"
+      }`}
+    >
+      {isVisualizationPage && data ? (
         <div className="Visualization">
           <System data={data} />
           {/* 시각화 */}
@@ -68,7 +78,12 @@ function App() {
         <div className="Upload">
           <h1>HookLens</h1>
           <label htmlFor="file-input">Select Files</label>
-          <input type="file" id="file-input" webkitdirectory="" ref={inputRef}></input>
+          <input
+            type="file"
+            id="file-input"
+            webkitdirectory=""
+            ref={inputRef}
+          ></input>
           <button
             onClick={() => setIsVisualizationPage(true)}
             disabled={!isVisualizationEnabled}
@@ -77,7 +92,6 @@ function App() {
           </button>
         </div>
       )}
-
     </div>
   );
 }
