@@ -20,6 +20,7 @@ interface TreeNode {
 const System = ({ data }: SystemProps) => {
   console.log("System Rendered");
   const [treeData, setTreeData] = useState<TreeNode | null>(null);
+  const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
 
   const mainTreeWidth = window.innerWidth;
   const mainTreeHeight = window.innerHeight;
@@ -130,33 +131,46 @@ const System = ({ data }: SystemProps) => {
   }
 
   const renderCustomNode = ({ nodeDatum }: { nodeDatum: TreeNode }) => {
+    const isSelected = selectedNode?.name === nodeDatum.name;
+
+    const width = isSelected
+      ? nodeDatum.hasStates && nodeDatum.hasProps
+        ? 200
+        : nodeDatum.hasStates || nodeDatum.hasProps
+        ? 120
+        : 100
+      : nodeDatum.hasStates && nodeDatum.hasProps
+      ? 100
+      : nodeDatum.hasStates || nodeDatum.hasProps
+      ? 60
+      : 50;
+
+    const height = isSelected ? 60 : 50;
+
+    const handleNodeClick = () => {
+      setSelectedNode(isSelected ? null : nodeDatum);
+    };
+
     return (
-      <g>
+      <g
+        onClick={handleNodeClick}
+        style={{
+          cursor: "pointer",
+        }}
+      >
         {/* Rectangle for the Component */}
         <rect
-          x={
-            -(nodeDatum.hasStates && nodeDatum.hasProps
-              ? 100
-              : nodeDatum.hasStates || nodeDatum.hasProps
-              ? 60
-              : 50) / 2
-          }
-          y={-25}
-          width={
-            nodeDatum.hasStates && nodeDatum.hasProps
-              ? 100
-              : nodeDatum.hasStates || nodeDatum.hasProps
-              ? 60
-              : 50
-          }
-          height={50}
+          x={-(width / 2)}
+          y={-(height / 2)}
+          width={width}
+          height={height}
           fill="#d9d9d9"
           stroke="none"
           rx={10}
           ry={10}
         />
         {/* Rectangle for the State */}
-        {nodeDatum.hasStates && (
+        {nodeDatum.hasStates && !isSelected && (
           <path
             d={
               nodeDatum.hasProps
@@ -181,7 +195,7 @@ const System = ({ data }: SystemProps) => {
           />
         )}
         {/* Rectangle for the Props */}
-        {nodeDatum.hasProps && (
+        {nodeDatum.hasProps && !isSelected && (
           <path
             d={
               nodeDatum.hasStates
@@ -208,7 +222,7 @@ const System = ({ data }: SystemProps) => {
         {/* Component name */}
         <text
           x={0}
-          y={-30}
+          y={isSelected ? -35 : -30}
           textAnchor="middle"
           fontSize="12px"
           fontFamily="Arial, sans-serif"
@@ -223,7 +237,13 @@ const System = ({ data }: SystemProps) => {
   };
 
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+      }}
+    >
       {/* Main Tree */}
       <Tree
         data={treeData}
