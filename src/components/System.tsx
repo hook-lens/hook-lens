@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { DataProps, HierarchyComponent } from "../types/data";
 import { createHierarchy } from "../utils/dataLoader";
 import Tree from "react-d3-tree";
+import DetailedComponent from "./DetailedComponent";
 import * as d3 from "d3";
+import { full } from "acorn-walk";
 interface SystemProps {
   data: DataProps;
 }
@@ -27,7 +29,7 @@ const System = ({ data }: SystemProps) => {
 
   const minimapScale = 0.25;
   const minimapZoom = 0.15;
-  const mainTreeZoom = 3;
+  const mainTreeZoom = 1;
 
   const minimapWidth = mainTreeWidth * minimapScale;
   const minimapHeight = mainTreeHeight * minimapScale;
@@ -135,17 +137,17 @@ const System = ({ data }: SystemProps) => {
 
     const width = isSelected
       ? nodeDatum.hasStates && nodeDatum.hasProps
-        ? 200
+        ? 600
         : nodeDatum.hasStates || nodeDatum.hasProps
-        ? 120
-        : 100
+        ? 360
+        : 300
       : nodeDatum.hasStates && nodeDatum.hasProps
-      ? 100
+      ? 300
       : nodeDatum.hasStates || nodeDatum.hasProps
-      ? 60
-      : 50;
+      ? 180
+      : 150;
 
-    const height = isSelected ? 60 : 50;
+    const height = isSelected ? 180 : 150;
 
     const handleNodeClick = () => {
       setSelectedNode(isSelected ? null : nodeDatum);
@@ -232,6 +234,23 @@ const System = ({ data }: SystemProps) => {
         >
           {nodeDatum.name}
         </text>
+        {isSelected && (
+          <foreignObject
+            width={width}
+            height={height}
+            x={-(width / 2)}
+            y={-(height / 2)}
+          >
+            <div style={{ width: "100%", height: "100%" }}>
+              <DetailedComponent
+                component={data.componentList.items.find(
+                  (item) => item.name === nodeDatum.name
+                )}
+                effects={data.effectList}
+              ></DetailedComponent>
+            </div>
+          </foreignObject>
+        )}
       </g>
     );
   };
@@ -249,7 +268,7 @@ const System = ({ data }: SystemProps) => {
         data={treeData}
         orientation="horizontal"
         pathFunc="diagonal"
-        nodeSize={{ x: 200, y: 100 }}
+        nodeSize={{ x: 600, y: 300 }}
         translate={mainTranslate}
         zoom={mainTreeZoom}
         zoomable={false}

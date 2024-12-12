@@ -26,6 +26,7 @@ export interface EffectProps {
   id: string;
   name: string;
   // state or prop id
+  handlingTargetIds: string[];
   dependencyIds: string[];
 }
 
@@ -60,5 +61,5 @@ export interface DataProps {
   componentList: ComponentListProps;
   states: StateListProps;
   props: PropListProps;
-  effects: EffectListProps;
+  effectList: EffectListProps;
 }

@@ -724,35 +724,30 @@ export default class HookExtractor {
 
     const stateList = {
       total: this.stateList.length,
-      items: this.stateList.map((state) => {
-        return {
-          id: state.id,
-          name: state.name,
-          root: state.root.id,
-        };
-      }),
+      items: this.stateList.map((state) => ({
+        id: state.id,
+        name: state.name,
+        root: state.root.id,
+      })),
     };
 
     const effectList = {
       total: this.effectList.length,
-      items: this.effectList.map((effect) => {
-        return {
-          id: effect.id,
-          root: effect.root.id,
-          dependencyIds: effect.dependencyIds,
-        };
-      }),
+      items: this.effectList.map((effect) => ({
+        id: effect.id,
+        root: effect.root.id,
+        handlingTargetIds: effect.handlingTargetIds,
+        dependencyIds: effect.dependencyIds,
+      })),
     };
 
     const propList = {
       total: this.propList.length,
-      items: this.propList.map((prop) => {
-        return {
-          id: prop.id,
-          name: prop.name,
-          root: prop.root.id,
-        };
-      }),
+      items: this.propList.map((prop) => ({
+        id: prop.id,
+        name: prop.name,
+        root: prop.root.id,
+      })),
     };
 
     const json = {
