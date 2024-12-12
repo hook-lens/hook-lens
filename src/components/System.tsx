@@ -266,6 +266,7 @@ const System = ({ data }: SystemProps) => {
           width: minimapWidth,
           height: minimapHeight,
           border: "1px solid #ccc",
+          borderRadius: "5px",
           background: "#fff",
         }}
       >
@@ -292,6 +293,52 @@ const System = ({ data }: SystemProps) => {
             pointerEvents: "all",
           }}
         />
+        {/* Legend */}
+        <div
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            background: "#fff",
+            padding: "5px",
+            border: "1px solid #ccc",
+            borderRadius: "5px",
+            fontSize: "12px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "5px",
+            }}
+          >
+            <span
+              style={{
+                width: "10px",
+                height: "10px",
+                backgroundColor: "#34c759",
+                marginRight: "5px",
+                borderRadius: "5px",
+              }}
+            ></span>
+            <span>State</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                width: "10px",
+                height: "10px",
+                backgroundColor: "#a2845e",
+                marginRight: "5px",
+                borderRadius: "5px",
+              }}
+            ></span>
+            <span>Prop</span>
+          </div>
+        </div>
       </div>
     </div>
   );
