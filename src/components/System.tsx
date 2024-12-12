@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DataProps, HierarchyComponent } from "../types/data";
 import { createHierarchy } from "../utils/dataLoader";
 import Tree from "react-d3-tree";
-
+import * as d3 from "d3";
 interface SystemProps {
   data: DataProps;
 }
@@ -18,7 +18,25 @@ interface TreeNode {
 }
 
 const System = ({ data }: SystemProps) => {
+  console.log("System Rendered");
   const [treeData, setTreeData] = useState<TreeNode | null>(null);
+
+  const mainTreeWidth = window.innerWidth;
+  const mainTreeHeight = window.innerHeight;
+
+  const minimapScale = 0.25;
+  const minimapZoom = 0.15;
+  const mainTreeZoom = 3;
+
+  const minimapWidth = mainTreeWidth * minimapScale;
+  const minimapHeight = mainTreeHeight * minimapScale;
+
+  const [mainTranslate, setMainTranslate] = useState({
+    x: mainTreeWidth / 3,
+    y: mainTreeHeight / 2,
+  });
+
+  const brushRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -42,6 +60,70 @@ const System = ({ data }: SystemProps) => {
       console.error("Error creating hierarchy", error);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (!brushRef.current || !treeData) return;
+
+    const fixedBrushSize = {
+      width: 25,
+      height: 25,
+    };
+
+    const brushSvg = d3.select(brushRef.current);
+    brushSvg.selectAll("*").remove();
+
+    const initialPosition: [[number, number], [number, number]] = [
+      [
+        minimapWidth / 3 - fixedBrushSize.width / 2,
+        minimapHeight / 2 - fixedBrushSize.height / 2,
+      ],
+      [
+        minimapWidth / 3 + fixedBrushSize.width / 2,
+        minimapHeight / 2 + fixedBrushSize.height / 2,
+      ],
+    ];
+
+    const brush = d3
+      .brush()
+      .extent([
+        [0, 0],
+        [minimapWidth, minimapHeight],
+      ])
+      .on("brush", ({ selection }) => {
+        if (selection) {
+          const [[x0, y0], [x1, y1]] = selection as [
+            [number, number],
+            [number, number]
+          ];
+
+          const centerX = (x0 + x1) / 2 - minimapWidth / 3;
+          const centerY = (y0 + y1) / 2 - minimapHeight / 2;
+
+          const mainCenterX = centerX / minimapScale;
+          const mainCenterY = centerY / minimapScale;
+
+          const newTranslate = {
+            x: mainTreeWidth / 3 - mainCenterX / minimapScale,
+            y: mainTreeHeight / 2 - mainCenterY / minimapScale,
+          };
+
+          setMainTranslate(newTranslate);
+        }
+      });
+
+    brushSvg
+      .append("g")
+      .attr("class", "brush")
+      .call(brush)
+      .call((g) => g.call(brush.move, initialPosition));
+  }, [
+    treeData,
+    minimapWidth,
+    minimapHeight,
+    mainTreeWidth,
+    mainTreeHeight,
+    setMainTranslate,
+  ]);
 
   if (!treeData) {
     return <div>Loading tree...</div>;
@@ -141,17 +223,56 @@ const System = ({ data }: SystemProps) => {
   };
 
   return (
-    <div style={{ width: "100%", height: "100vh" }}>
+    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+      {/* Main Tree */}
       <Tree
         data={treeData}
         orientation="horizontal"
         pathFunc="diagonal"
         nodeSize={{ x: 200, y: 100 }}
-        translate={{ x: 300, y: 50 }}
-        zoomable
-        enableLegacyTransitions
+        translate={mainTranslate}
+        zoom={mainTreeZoom}
+        zoomable={false}
+        draggable={false}
+        scaleExtent={{ min: mainTreeZoom, max: mainTreeZoom }}
         renderCustomNodeElement={renderCustomNode}
       />
+      {/* Minimap */}
+      <div
+        style={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          width: minimapWidth,
+          height: minimapHeight,
+          border: "1px solid #ccc",
+          background: "#fff",
+        }}
+      >
+        <Tree
+          data={treeData}
+          orientation="horizontal"
+          pathFunc="diagonal"
+          nodeSize={{ x: 200, y: 100 }}
+          translate={{ x: minimapWidth / 3, y: minimapHeight / 2 }}
+          zoom={minimapZoom}
+          zoomable={false}
+          draggable={false}
+          scaleExtent={{ min: minimapZoom, max: minimapZoom }}
+          renderCustomNodeElement={renderCustomNode}
+        />
+        <svg
+          ref={brushRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "all",
+          }}
+        />
+      </div>
     </div>
   );
 };
