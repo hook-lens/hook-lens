@@ -105,8 +105,49 @@ project
 └── package.json
 ```
 
-### Task 2. useEffect Dependency Management
-#### 1️⃣ **Task 정의**  
-- **useEffect**의 Dependency Array에 포함된 변수들이 올바르게 관리되고 있는지 확인 
-- Dependency Array가 올바르게 정의되지 않아 발생하는 **side effects** 또는 **렌더링 문제**를 탐지
-- 중복 렌더링, 무한 루프, 또는 의도치 않은 동작의 원인을 추적
+## Task 정답
+
+### App.js → Home.js → PaginatedItems → Items.js
+
+- **pageCount 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - PaginatedItems.js에서 사용
+- **setPageCount 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - PaginatedItems.js에서 사용
+- **currentAlcoholList 上**
+    - App.js -> Home.js -> PaginatedItems.js -> Items.js
+    - Items.js에서 사용
+- **setCurrentAlcoholList 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - PaginatedItems.js에서 사용
+- **itemOffset 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - PaginatedItems.js에서 사용
+- **setItemOffset 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - PaginatedItems.js에서 사용
+- **category 上**
+    - App.js -> Home.js -> PaginatedItems.js
+    - Home.js에서 사용
+
+### App.js → Liquor.js → FilteredPaginatedItems.js → FilteredItems.js
+
+- **dummyAlcoholList**
+    - App.js -> Liquor.js **下**
+    - 사용되지 않음
+- **filteredAlcoholList(alcoholList) 中**
+    - App.js -> Liquor.js -> FilteredPaginatedItems
+    - FilteredPaginatedItems.js에서 사용
+- **filteredItemOffset 下**
+    - App.js -> Liquor.js
+    - 사용되지 않음
+
+### App.js → Details.js → KakaoRecommendButton.js
+
+- **dummyAlcoholList 下**
+    - App.js -> Details.js
+    - 사용되지 않음
+- **setDummyAlcoholList 下**
+    - App.js -> Details.js
+    - 사용되지 않음
