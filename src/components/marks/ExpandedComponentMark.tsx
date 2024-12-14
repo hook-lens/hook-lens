@@ -8,8 +8,7 @@ type ExpandedComponentMark = Node<
     label: string;
     component: ComponentNode;
     setNode: React.Dispatch<React.SetStateAction<Node[]>>;
-    width: number;
-    height: number;
+    size: { width: number; height: number };
     x: number;
     y: number;
   },
@@ -19,9 +18,6 @@ type ExpandedComponentMark = Node<
 export default function ExpandedComponentMark({
   data,
 }: NodeProps<ExpandedComponentMark>) {
-  const baseWidth = 200;
-  const width = baseWidth;
-
   return (
     <div className="expanded">
       <div
@@ -37,8 +33,8 @@ export default function ExpandedComponentMark({
       <div
         className="node-content"
         style={{
-          width: data.width,
-          height: data.height,
+          width: data.size.width,
+          height: data.size.height,
           borderRadius: 2,
           background: "#D9D9D9",
         }}

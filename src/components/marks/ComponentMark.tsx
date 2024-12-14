@@ -3,12 +3,12 @@ import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
 type ComponentMark = Node<
-  { label: string; hasState: boolean; hasProps: boolean },
+  { label: string; hasState: boolean; hasProps: boolean, baseWidth: number },
   "component"
 >;
 
 export default function ComponentMark({ data }: NodeProps<ComponentMark>) {
-  const baseWidth = 30;
+  const baseWidth = data.baseWidth;
   const width =
     data.hasState && data.hasProps
       ? baseWidth * 2
