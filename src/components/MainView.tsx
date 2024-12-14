@@ -639,11 +639,17 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
                   style={{
                     borderRadius: 2,
                     backgroundColor: legend.color,
-                    width: 20,
-                    height: 20,
+                    width: 15,
+                    height: 15,
                   }}
                 />
-                <div>{legend.label}</div>
+                <div
+                  style={{
+                    fontSize: 14,
+                  }}
+                >
+                  {legend.label}
+                </div>
               </div>
             ))}
           </div>
