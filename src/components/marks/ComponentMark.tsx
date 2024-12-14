@@ -2,6 +2,8 @@ import { memo } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
+import "./ComponentStyle.css"
+
 type ComponentMark = Node<
   { label: string; hasState: boolean; hasProps: boolean, baseWidth: number },
   "component"

@@ -5,8 +5,8 @@ import { Handle } from "@xyflow/react";
 type EffectMark = Node<{ label: string }, "effect">;
 
 export default function EffectMark({ data }: NodeProps<EffectMark>) {
-  const width = 100;
-  const height = 30;
+  const width = 80;
+  const height = 25;
   return (
     <div className="effect">
       <div
@@ -19,7 +19,14 @@ export default function EffectMark({ data }: NodeProps<EffectMark>) {
           background: "#32ADE6",
         }}
       >
-        <div className="label-content">{data.label}</div>
+        <div
+          className="label-content"
+          style={{
+            fontSize: 11,
+          }}
+        >
+          {data.label}
+        </div>
       </div>
 
       <Handle

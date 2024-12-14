@@ -518,12 +518,11 @@ export default class HookExtractor {
 
       const name = attribute.name.name;
       let target = component.getPropByName(name);
-      if (!target) {
+      if (target) {
         return;
-      }
-
-      if (!component.getPropById(target.id)) {
-        console.log("Props target", component, attribute);
+      } else {
+        console.log("extractAttribute", component, openingElement);
+        target = new PropNode(name, component);
         component.props.push(target);
       }
 

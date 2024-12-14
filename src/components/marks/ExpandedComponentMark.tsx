@@ -3,6 +3,8 @@ import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 import { ComponentNode } from "../../module/HookExtractor";
 
+import "./ComponentStyle.css"
+
 type ExpandedComponentMark = Node<
   {
     label: string;

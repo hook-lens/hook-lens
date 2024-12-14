@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   Edge,
+  MarkerType,
   MiniMap,
   Node,
   Position,
@@ -58,8 +59,14 @@ const nodeTypes = {
   state: StateMark,
 };
 
-const topMargin = 30;
-const baseWidth = 30;
+const topMargin = 25;
+const baseWidth = 25;
+const baseExpadnedWidth = 325;
+const innerMarkGap = 45;
+
+const defaultAnimationStyle = {
+  transition: `width 100ms, height 100ms, transform 100ms`,
+};
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
   const [componentNodes, setComponentNodes, onNodesChange] =
@@ -106,9 +113,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         newNodes.push({
           id: node.id,
           type: "component",
-          style: {
-            transition: `width 100ms, height 100ms, transform 100ms`,
-          },
+          style: defaultAnimationStyle,
           data: {
             label: node.name,
             level,
@@ -160,6 +165,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: `${component.id}-${child.id}`,
           source: component.id,
           target: child.id,
+          markerEnd: MarkerType.Arrow,
           animated: false,
         });
       });
@@ -171,6 +177,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: `${component.id}-${child.id}`,
           source: component.id,
           target: child.id,
+          markerEnd: MarkerType.Arrow,
           animated: true,
         });
       });
@@ -196,13 +203,11 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: prop.id,
             type: "prop",
             parentId: node.id,
-            style: {
-              transition: `width 100ms, height 100ms, transform 100ms`,
-            },
+            style: defaultAnimationStyle,
             data: { label: prop.name },
             position: {
               x: 0,
-              y: topMargin + i * 50,
+              y: topMargin + i * innerMarkGap,
             },
           });
         });
@@ -213,13 +218,11 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: state.id,
             type: "state",
             parentId: node.id,
-            style: {
-              transition: `width 100ms, height 100ms, transform 100ms`,
-            },
+            style: defaultAnimationStyle,
             data: { label: state.name },
             position: {
-              x: 270,
-              y: topMargin + i * 50,
+              x: 300,
+              y: topMargin + i * innerMarkGap,
             },
           });
         });
@@ -230,16 +233,14 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: effect.id,
             type: "effect",
             parentId: node.id,
-            style: {
-              transition: `width 100ms, height 100ms, transform 100ms`,
-            },
+            style: defaultAnimationStyle,
             sourcePosition: Position.Right,
             data: {
               label: effect.id,
             },
             position: {
-              x: 100,
-              y: topMargin + 40 * i,
+              x: 125,
+              y: topMargin + innerMarkGap * i,
             },
           });
 
@@ -252,6 +253,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
                 ? { stroke: "#FF3B30", strokeWidth: 2 }
                 : { stroke: "black", strokeWidth: 2 },
               animated: depId.startsWith("state") ? true : false,
+              markerStart: MarkerType.Arrow,
               data: { component: component.id },
             });
           });
@@ -279,9 +281,11 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             component.effects.length,
             component.states.length
           ) *
-            50 +
-          20, baseWidth);
-        node.data.size = { width: 300, height: expandedHeight };
+            innerMarkGap +
+            20,
+          baseWidth
+        );
+        node.data.size = { width: baseExpadnedWidth, height: expandedHeight };
         console.log(
           "Test",
           node.data.level,
@@ -299,7 +303,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             (newNode.data.level as number) > (node.data.level as number)
           ) {
             (newNode.data.translatedPosition as XYPosition).x +=
-              300 - baseWidth;
+              baseExpadnedWidth - baseWidth;
           }
 
           if (
@@ -360,7 +364,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             (newNode.data.level as number) > (node.data.level as number)
           ) {
             (newNode.data.translatedPosition as XYPosition).x -=
-              300 - baseWidth;
+              baseExpadnedWidth - baseWidth;
           }
 
           if (
@@ -408,9 +412,9 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         nodeTypes={nodeTypes}
         // snapToGrid={true}
         minZoom={1}
-        maxZoom={3}
-        defaultViewport={{ x: 0, y: 0, zoom: 3 }}
-        // fitView
+        maxZoom={4}
+        // defaultViewport={{ x: 800, y: 800, zoom: 2 }}
+        fitView
         attributionPosition="bottom-left"
       >
         <MiniMap position="top-left" pannable />

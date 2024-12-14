@@ -5,17 +5,17 @@ import { Handle } from "@xyflow/react";
 type PropMark = Node<{ label: string }, "prop">;
 
 export default function PropMark({ data }: NodeProps<PropMark>) {
-  const width = 30;
-  const height = 30;
+  const width = 25;
+  const height = 25;
   return (
     <div className="prop">
       <div
         className="label-content"
         style={{
           position: "absolute",
-          top: -15,
+          top: -13,
           textAlign: "left",
-          fontSize: 12,
+          fontSize: 11,
         }}
       >
         {data.label}

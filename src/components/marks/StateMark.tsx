@@ -5,18 +5,18 @@ import { Handle } from "@xyflow/react";
 type StateMark = Node<{ label: string }, "state">;
 
 export default function StateMark({ data }: NodeProps<StateMark>) {
-  const width = 30;
-  const height = 30;
+  const width = 25;
+  const height = 25;
   return (
     <div className="state">
       <div
         className="label-content"
         style={{
           position: "absolute",
-          top: -15,
+          top: -13,
           right: 0,
           textAlign: "right",
-          fontSize: 12,
+          fontSize: 11,
         }}
       >
         {data.label}

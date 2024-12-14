@@ -1,0 +1,8 @@
+.mark {
+    transition: "box-shadow 0.2s ease-in-out";
+    border-radius: 2;
+}
+
+.mark:hover {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
