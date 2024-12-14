@@ -105,7 +105,7 @@ export class PropNode {
   readonly name: string;
   readonly root: ComponentNode;
 
-  references: string[];
+  readonly references: string[];
 
   constructor(name: string, root: ComponentNode) {
     this.id = PropNode.idGenerator.next();
@@ -518,9 +518,7 @@ export default class HookExtractor {
 
       const name = attribute.name.name;
       let target = component.getPropByName(name);
-      if (target) {
-        return;
-      } else {
+      if (!target) {
         console.log("extractAttribute", component, openingElement);
         target = new PropNode(name, component);
         component.props.push(target);

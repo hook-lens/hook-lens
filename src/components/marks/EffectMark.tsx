@@ -5,7 +5,7 @@ import { Handle } from "@xyflow/react";
 type EffectMark = Node<{ label: string }, "effect">;
 
 export default function EffectMark({ data }: NodeProps<EffectMark>) {
-  const width = 80;
+  const width = 70;
   const height = 25;
   return (
     <div className="effect">

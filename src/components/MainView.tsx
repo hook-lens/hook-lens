@@ -39,18 +39,6 @@ interface MainViewProps {
   hookExtractor: MutableRefObject<HookExtractor>;
 }
 
-interface ComponentMarkData {
-  label: string;
-  level: number;
-  index: number;
-  hasState: boolean;
-  hasProps: boolean;
-  baseWidth?: number;
-  initialPosition?: { x: number; y: number };
-  translatedPosition?: { x: number; y: number };
-  size?: { width: number; height: number };
-}
-
 const nodeTypes = {
   component: ComponentMark,
   expanded: ExpandedComponentMark,
@@ -63,10 +51,54 @@ const topMargin = 25;
 const baseWidth = 25;
 const baseExpadnedWidth = 325;
 const innerMarkGap = 45;
+const innerEdgeWidth = 1.5;
 
 const defaultAnimationStyle = {
   transition: `width 100ms, height 100ms, transform 100ms`,
 };
+
+function findRoots(
+  components: ComponentNode[],
+  extractor: HookExtractor
+): ComponentNode[] {
+  const visited: string[] = [];
+  const roots: ComponentNode[] = [];
+  components.forEach((component) => {
+    if (visited.includes(component.id)) return;
+    extractor.visitChildren(component, (child) => {
+      visited.push(child.id);
+    });
+  });
+  components.forEach((component) => {
+    if (!visited.includes(component.id)) roots.push(component);
+  });
+  return roots;
+}
+
+function isConnected(
+  sourceId: string,
+  targetId: string,
+  extractor: HookExtractor
+): boolean {
+  const source = extractor.getComponentById(sourceId);
+  const target = extractor.getComponentById(targetId);
+
+  if (!source || !target) return false;
+
+  return (
+    (source.getChildById(targetId) || target.getChildById(sourceId)) !==
+    undefined
+  );
+}
+
+function calcNewPosition(node: Node) {
+  const initialPosition = node.data.initialPosition as XYPosition;
+  const translatedPosition = node.data.translatedPosition as XYPosition;
+  return {
+    x: initialPosition.x + translatedPosition.x,
+    y: initialPosition.y + translatedPosition.y,
+  };
+}
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
   const [componentNodes, setComponentNodes, onNodesChange] =
@@ -77,6 +109,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
   const [componentEdges, setComponentEdges] = useEdgesState<Edge>([]);
   const [effectEdges, setEffectEdges] = useEdgesState<Edge>([]);
+  const [propEdges, setPropEdges] = useEdgesState<Edge>([]);
 
   const expandedLevels = useRef<Record<number, number>>({});
 
@@ -86,34 +119,20 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   useEffect(() => {
     console.info("MainView Rendered", extractor);
 
-    const findRoots = (components: ComponentNode[]): ComponentNode[] => {
-      const visited: string[] = [];
-      const roots: ComponentNode[] = [];
-      components.forEach((component) => {
-        if (visited.includes(component.id)) return;
-        extractor.visitChildren(component, (child) => {
-          visited.push(child.id);
-        });
-      });
-      components.forEach((component) => {
-        if (!visited.includes(component.id)) roots.push(component);
-      });
-      return roots;
-    };
-
-    const rootComponents = findRoots(components);
+    const rootComponents = findRoots(components, extractor);
     console.log(rootComponents);
 
     let maxLevel = 0;
     let index = 0;
     const newNodes: Node[] = [];
-    const convertComponenttoFlowNode = (node: ComponentNode, level: number) => {
+    const convertComponentToMark = (node: ComponentNode, level: number) => {
       const target = newNodes.find((n) => n.id === node.id);
       if (!target) {
         newNodes.push({
           id: node.id,
           type: "component",
-          style: defaultAnimationStyle,
+          style: { ...defaultAnimationStyle },
+          zIndex: -100,
           data: {
             label: node.name,
             level,
@@ -136,12 +155,12 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         (a, b) => extractor.countChidren(b) - extractor.countChidren(a)
       );
       node.children.forEach((child) => {
-        convertComponenttoFlowNode(child, level + 1);
+        convertComponentToMark(child, level + 1);
       });
     };
 
     rootComponents.forEach((root) => {
-      convertComponenttoFlowNode(root, 0);
+      convertComponentToMark(root, 0);
     });
 
     for (let level = 0; level <= maxLevel; level++) {
@@ -193,7 +212,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
       const isExpanded = node.type === "component";
       node.type = isExpanded ? "expanded" : "component";
-      node.zIndex = -100;
 
       const component = node.data.component as ComponentNode;
 
@@ -203,7 +221,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: prop.id,
             type: "prop",
             parentId: node.id,
-            style: defaultAnimationStyle,
+            zIndex: -100,
+            style: { ...defaultAnimationStyle },
             data: { label: prop.name },
             position: {
               x: 0,
@@ -218,7 +237,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: state.id,
             type: "state",
             parentId: node.id,
-            style: defaultAnimationStyle,
+            zIndex: -100,
+            style: { ...defaultAnimationStyle },
             data: { label: state.name },
             position: {
               x: 300,
@@ -233,7 +253,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             id: effect.id,
             type: "effect",
             parentId: node.id,
-            style: defaultAnimationStyle,
+            zIndex: -100,
+            style: { ...defaultAnimationStyle },
             sourcePosition: Position.Right,
             data: {
               label: effect.id,
@@ -250,8 +271,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
               source: depId,
               target: effect.id,
               style: depId.startsWith("state")
-                ? { stroke: "#FF3B30", strokeWidth: 2 }
-                : { stroke: "black", strokeWidth: 2 },
+                ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
+                : { stroke: "black", strokeWidth: innerEdgeWidth },
               animated: depId.startsWith("state") ? true : false,
               markerStart: MarkerType.Arrow,
               data: { component: component.id },
@@ -264,8 +285,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
               source: effect.id,
               target: targetId,
               style: targetId.startsWith("prop")
-                ? { stroke: "#FF3B30", strokeWidth: 2 }
-                : { stroke: "black", strokeWidth: 2 },
+                ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
+                : { stroke: "black", strokeWidth: innerEdgeWidth },
               animated: targetId.startsWith("prop") ? true : false,
               data: { component: component.id },
             });
@@ -286,12 +307,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           baseWidth
         );
         node.data.size = { width: baseExpadnedWidth, height: expandedHeight };
-        console.log(
-          "Test",
-          node.data.level,
-          expandedLevels.current,
-          expandedLevels.current[node.data.level as number]
-        );
         const newNodes = componentNodes.map((target) => {
           if (target.id === node.id) {
             return node;
@@ -314,16 +329,39 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
               expandedHeight - baseWidth;
           }
 
-          const initialPosition = newNode.data.initialPosition as XYPosition;
-          const translatedPosition = newNode.data
-            .translatedPosition as XYPosition;
-          newNode.position = {
-            x: initialPosition.x + translatedPosition.x,
-            y: initialPosition.y + translatedPosition.y,
-          };
-
+          newNode.position = calcNewPosition(newNode);
           return newNode;
         });
+
+        newNodes.forEach((node) => {
+          if (node.type !== "expanded" || !node.data.component) return;
+
+          const component = node.data.component as ComponentNode;
+          component.props.forEach((prop) => {
+            prop.references.forEach((ref) => {
+              const target =
+                stateNodes.find((target) => target.id === ref) ||
+                propNodes.find((target) => target.id === ref);
+
+              if (!target) return;
+              if (propEdges.find((edge) => edge.id === `${ref}-${prop.id}`)) return;
+
+              propEdges.push({
+                id: `${ref}-${prop.id}`,
+                source: ref,
+                target: prop.id,
+                style: { strokeWidth: innerEdgeWidth },
+                data: {
+                  refRoot: target.id,
+                  propRoot: component.id,
+                },
+                animated: true,
+              });
+            });
+          });
+        });
+
+        setPropEdges(propEdges);
 
         expandedLevels.current[node.data.level as number]++;
         setComponentNodes(newNodes);
@@ -352,6 +390,15 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           })
         );
 
+        setPropEdges(
+          propEdges.filter((edge) => {
+            return (
+              edge.data?.propRoot !== component.id &&
+              edge.data?.refRoot !== component.id
+            );
+          })
+        );
+
         expandedLevels.current[node.data.level as number]--;
         const newNodes = componentNodes.map((target) => {
           if (target.id === node.id) {
@@ -375,18 +422,13 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
               (node.data.size as MarkSize).height - baseWidth;
           }
 
-          const initialPosition = newNode.data.initialPosition as XYPosition;
-          const translatedPosition = newNode.data
-            .translatedPosition as XYPosition;
-          newNode.position = {
-            x: initialPosition.x + translatedPosition.x,
-            y: initialPosition.y + translatedPosition.y,
-          };
-
+          newNode.position = calcNewPosition(newNode);
           return newNode;
         });
         setComponentNodes(newNodes);
       }
+
+
     },
     [componentNodes, propNodes, stateNodes, effectNodes, effectEdges]
   );
@@ -404,16 +446,11 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           .concat(effectNodes)
           .concat(propNodes)
           .concat(stateNodes)}
-        edges={componentEdges.concat(effectEdges)}
-        // onNodesChange={onNodesChange}
-        // onEdgesChange={onEdgesChange}
-        // onConnect={onConnect}
+        edges={componentEdges.concat(effectEdges).concat(propEdges)}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
-        // snapToGrid={true}
         minZoom={1}
         maxZoom={4}
-        // defaultViewport={{ x: 800, y: 800, zoom: 2 }}
         fitView
         attributionPosition="bottom-left"
       >
