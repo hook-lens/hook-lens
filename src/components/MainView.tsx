@@ -55,6 +55,25 @@ const defaultAnimationStyle = {
   transition: `width 100ms, height 100ms, transform 100ms`,
 };
 
+const legendStyle = [
+  {
+    label: "Component",
+    color: "#D9D9D9",
+  },
+  {
+    label: "Prop",
+    color: "#A2845E",
+  },
+  {
+    label: "State",
+    color: "#34C759",
+  },
+  {
+    label: "Effect",
+    color: "#32ADE6",
+  },
+];
+
 function findRoots(
   components: ComponentNode[],
   extractor: HookExtractor
@@ -605,6 +624,29 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             transform: "translate(0px, 200px)",
           }}
         >
+          <div className="legend">
+            {legendStyle.map((legend) => (
+              <div
+                key={legend.label}
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: 5,
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    borderRadius: 2,
+                    backgroundColor: legend.color,
+                    width: 20,
+                    height: 20,
+                  }}
+                />
+                <div>{legend.label}</div>
+              </div>
+            ))}
+          </div>
           <button className="control" onClick={expandAllComponents}>
             Expand all
           </button>
