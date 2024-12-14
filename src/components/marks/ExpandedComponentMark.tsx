@@ -3,7 +3,7 @@ import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 import { ComponentNode } from "../../module/HookExtractor";
 
-import "./ComponentStyle.css"
+import "./ComponentStyle.css";
 
 type ExpandedComponentMark = Node<
   {
@@ -22,16 +22,7 @@ export default function ExpandedComponentMark({
 }: NodeProps<ExpandedComponentMark>) {
   return (
     <div className="expanded">
-      <div
-        className="label-content"
-        style={{
-          position: "absolute",
-          top: -20,
-          textAlign: "left",
-        }}
-      >
-        {data.label}
-      </div>
+      <div className="label">{data.label}</div>
       <div
         className="node-content"
         style={{

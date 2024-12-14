@@ -2,10 +2,10 @@ import { memo } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
-import "./ComponentStyle.css"
+import "./ComponentStyle.css";
 
 type ComponentMark = Node<
-  { label: string; hasState: boolean; hasProps: boolean, baseWidth: number },
+  { label: string; hasState: boolean; hasProps: boolean; baseWidth: number },
   "component"
 >;
 
@@ -19,16 +19,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMark>) {
       : baseWidth;
   return (
     <div className="component">
-      <div
-        className="label-content"
-        style={{
-          position: "absolute",
-          top: -20,
-          textAlign: "left",
-        }}
-      >
-        {data.label}
-      </div>
+      <div className="label">{data.label}</div>
       <div
         className="node-content"
         style={{
