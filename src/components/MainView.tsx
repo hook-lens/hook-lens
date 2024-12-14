@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  MutableRefObject,
-  useCallback,
-} from "react";
+import React, { useEffect, useRef, MutableRefObject, useCallback } from "react";
 import {
   Edge,
   MarkerType,
@@ -16,12 +10,7 @@ import {
   useNodesState,
   XYPosition,
 } from "@xyflow/react";
-import HookExtractor, {
-  ComponentNode,
-  StateNode,
-  EffectNode,
-  PropNode,
-} from "../module/HookExtractor";
+import HookExtractor, { ComponentNode } from "../module/HookExtractor";
 
 import "@xyflow/react/dist/style.css";
 import ComponentMark from "./marks/ComponentMark";
@@ -30,10 +19,10 @@ import EffectMark from "./marks/EffectMark";
 import PropMark from "./marks/PropMark";
 import StateMark from "./marks/StateMark";
 
-type MarkSize = {
+interface MarkSize {
   width: number;
   height: number;
-};
+}
 
 interface MainViewProps {
   hookExtractor: MutableRefObject<HookExtractor>;
@@ -75,22 +64,6 @@ function findRoots(
   return roots;
 }
 
-function isConnected(
-  sourceId: string,
-  targetId: string,
-  extractor: HookExtractor
-): boolean {
-  const source = extractor.getComponentById(sourceId);
-  const target = extractor.getComponentById(targetId);
-
-  if (!source || !target) return false;
-
-  return (
-    (source.getChildById(targetId) || target.getChildById(sourceId)) !==
-    undefined
-  );
-}
-
 function calcNewPosition(node: Node) {
   const initialPosition = node.data.initialPosition as XYPosition;
   const translatedPosition = node.data.translatedPosition as XYPosition;
@@ -101,8 +74,7 @@ function calcNewPosition(node: Node) {
 }
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
-  const [componentNodes, setComponentNodes, onNodesChange] =
-    useNodesState<Node>([]);
+  const [componentNodes, setComponentNodes] = useNodesState<Node>([]);
   const [effectNodes, setEffectNodes] = useNodesState<Node>([]);
   const [propNodes, setPropNodes] = useNodesState<Node>([]);
   const [stateNodes, setStateNodes] = useNodesState<Node>([]);
@@ -207,7 +179,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      console.log("onNodeClick", node);
+      console.info("onNodeClick", node);
       if (node.type !== "component" && node.type !== "expanded") return;
 
       const isExpanded = node.type === "component";
@@ -344,13 +316,16 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
                 propNodes.find((target) => target.id === ref);
 
               if (!target) return;
-              if (propEdges.find((edge) => edge.id === `${ref}-${prop.id}`)) return;
+              if (propEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
+                return;
 
               propEdges.push({
                 id: `${ref}-${prop.id}`,
                 source: ref,
                 target: prop.id,
-                style: { strokeWidth: innerEdgeWidth },
+                style: ref.startsWith("prop")
+                  ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
+                  : { stroke: "black" },
                 data: {
                   refRoot: target.id,
                   propRoot: component.id,
@@ -427,8 +402,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         });
         setComponentNodes(newNodes);
       }
-
-
     },
     [componentNodes, propNodes, stateNodes, effectNodes, effectEdges]
   );

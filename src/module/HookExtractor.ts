@@ -478,15 +478,13 @@ export default class HookExtractor {
         }
 
         const openingElement = (node as any).openingElement;
-        const target = this.getComponentByName(openingElement.name.name);
+        const child = this.getComponentByName(openingElement.name.name);
 
-        if (!target) {
-          return;
-        }
+        if (!child) return;
 
-        console.log("linkComponents", component, target, openingElement);
-        this.extractAttributes(target, openingElement);
-        component.children.push(target);
+        console.log("linkComponents", component, child, openingElement);
+        this.extractAttributes(child, openingElement.attributes, component);
+        component.children.push(child);
       });
 
       const importedComponents = this.extractImportedComponents(
@@ -500,54 +498,70 @@ export default class HookExtractor {
         }
 
         const target = this.getComponentById(id);
-        if (!target) {
-          return;
-        }
+        if (!target) return;
 
         component.falseChildren.push(target);
       });
     });
   }
 
-  private extractAttributes(component: ComponentNode, openingElement: any) {
-    console.info("extractAttribute", component, openingElement);
-    for (const attribute of openingElement.attributes) {
-      if (attribute.type !== "JSXAttribute") {
-        return;
-      }
-
-      const name = attribute.name.name;
-      let target = component.getPropByName(name);
-      if (!target) {
-        console.log("extractAttribute", component, openingElement);
-        target = new PropNode(name, component);
-        component.props.push(target);
-      }
-
-      const expression = attribute.value.expression;
-      const findAndPushReferenceId = (name: string) => {
-        const reference =
-          this.getStateByName(name) ||
-          this.getStateBySetter(name) ||
-          this.getPropByName(name);
-
-        if (
-          target &&
-          reference &&
-          reference.id !== target.id &&
-          !target.references.includes(reference.id)
-        ) {
-          target.references.push(reference.id);
+  private extractAttributes(
+    component: ComponentNode,
+    attributes: any[],
+    parent: ComponentNode
+  ) {
+    console.info("extractAttribute", component, attributes);
+    for (const attribute of attributes) {
+      if (attribute.type === "JSXAttribute") {
+        const name = attribute.name.name;
+        let targetProp = component.getPropByName(name);
+        if (!targetProp) {
+          console.log("extractAttribute - new prop", component, attribute);
+          targetProp = new PropNode(name, component);
+          component.props.push(targetProp);
         }
-      };
 
-      if (expression.type === "Identifier") {
-        findAndPushReferenceId((expression as acorn.Identifier).name);
-      } else if (expression.type === "MemberExpression") {
-        const property = (expression as acorn.MemberExpression).property;
-        walk.simple(property, {
-          Identifier: (node) => findAndPushReferenceId(node.name),
-        });
+        const expression = attribute.value.expression;
+        const findAndPushReferenceId = (name: string, targetProp: PropNode) => {
+          const reference =
+            parent.getStateByName(name) ||
+            parent.getStateBySetter(name) ||
+            parent.getPropByName(name);
+
+          if (
+            reference &&
+            reference.id !== targetProp.id &&
+            !targetProp.references.includes(reference.id)
+          ) {
+            targetProp.references.push(reference.id);
+          }
+        };
+
+        if (expression.type === "Identifier") {
+          findAndPushReferenceId(
+            (expression as acorn.Identifier).name,
+            targetProp
+          );
+        } else if (expression.type === "MemberExpression") {
+          const property = (expression as acorn.MemberExpression).property;
+          walk.simple(property, {
+            Identifier: (node) =>
+              findAndPushReferenceId(node.name, targetProp!),
+          });
+        }
+      } else if (attribute.type === "JSXSpreadAttribute") {
+        const expression = attribute.argument;
+        if (expression.type === "Identifier" && expression.name === "props") {
+          parent.props.forEach((prop) => {
+            const targetProp = component.getPropByName(prop.name);
+            if (!targetProp) {
+              console.log("extractAttribute - new prop", component, prop);
+              const newProp = this.newPropNode(component, prop.name)
+              newProp.references.push(prop.id);
+              component.props.push(newProp);
+            }
+          });
+        }
       }
     }
   }
