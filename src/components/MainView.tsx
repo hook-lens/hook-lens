@@ -364,18 +364,21 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       console.info("onNodeClick", node);
       if (node.type !== "component" && node.type !== "expanded") return;
 
-      const updatedNodes = componentNodes.map((n) => ({ ...n }));
+      let updatedNodes = componentNodes.map((n) => ({ ...n }));
       const component = node.data.component as ComponentNode;
       if (node.type === "component") {
-        setComponentNodes(expandComponent(node, updatedNodes));
+        updatedNodes = expandComponent(node, updatedNodes);
+        setComponentNodes(updatedNodes);
 
         const updatedPropNodes = [...propNodes, ...convertPropNodes(component)];
         setPropNodes(updatedPropNodes);
+
         const updatedStateNodes = [
           ...stateNodes,
           ...convertStateNodes(component),
         ];
         setStateNodes(updatedStateNodes);
+
         setEffectNodes([...effectNodes, ...convertEffectNodes(component)]);
         setEffectEdges([...effectEdges, ...convertEffectEdges(component)]);
         setPropEdges([
@@ -399,14 +402,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         setComponentNodes(shrinkComponent(node, updatedNodes));
       }
     },
-    [
-      componentNodes,
-      propNodes,
-      stateNodes,
-      effectNodes,
-      effectEdges,
-      propEdges,
-    ]
+    [componentNodes, propNodes, stateNodes, effectNodes, effectEdges, propEdges]
   );
 
   const shrinkComponent = (targetNode: Node, currentNodes: Node[]) => {
