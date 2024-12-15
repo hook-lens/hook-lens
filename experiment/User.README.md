@@ -80,45 +80,60 @@ const Parent = () => {
     const prop1 = 'prop1';
     const prop2 = 'prop2';
     const prop3 = 'prop3';
+
     return <Child1 prop1={prop1} prop2={prop2} prop3={prop3} />;
 }
 
 // Child1 Component
 const Child1 = ({ prop1, prop2, prop3 }) => {
-    return <Child2 prop1={prop1} prop2={prop2} />;
+
+    const handleClick = () => {
+        console.log(prop1);
+    }
+
+    return <Child2 prop2={prop2} prop3={prop3}
+    onClick={handleClick} />;
+    />;
 }
 
 // Child2 Component
-const Child2 = ({ prop1, prop2 }) => {
-    return <Child3 prop1={prop1} />;
+const Child2 = ({ prop2, prop3 }) => {
+    return <Child3 prop2={prop2} />;
 }
 
 // Child3 Component
-const Child3 = ({ prop1 }) => {
-    return <div>{prop1}</div>;
+const Child3 = ({ prop2 }) => {
+    return <div>{prop2}</div>;
 }
 ```
 - **문제**
-    - 위의 코드에서 Prop Drilling에 해당하는 props 찾기
+    - 위의 코드에서 prop1, prop2, prop3가 Prop Drilling에 해당하는지 판단
 
 - **정답**
-    - `prop1`, `prop2`, `prop3`
+    - `prop1`
+        - No
+    - `prop2`
+        - Yes
+    - `prop3`
+        - Yes
 
 - **Prop Drilling**
-     - `prop1`: 3번 (Parent → Child1 → Child2 → Child3)
-     - `prop2`: 2번 (Parent → Child1 → Child2)
-     - `prop3`: 1번 (Parent → Child1)
-
-- **사용 여부**
-   - 최종적으로 사용된 prop: `prop1` (Child3 컴포넌트에서 사용)
-   - 사용되지 않은 props: `prop2`, `prop3`는 자식 계층에서 전혀 사용되지 않음
+     - `prop2`
+        - 3번 (Parent → Child1 → Child2 → Child3)
+        - Child3 컴포넌트에서 사용
+     - `prop3`
+        - 2번 (Parent → Child1 -> Child2)
+        - 사용되지 않음
 
 
 ### 📝 ***Problem***
-- Example Project에서 Prop Drilling에 해당하는 props를 ***10분*** 내에 모두 찾으세요.
-- App.js 파일에서 시작하여 하위 컴포넌트로 이동하면서 props를 확인하세요.
-- 찾은 props의 이름을 적어주세요.
-- Base와 Test 환경에서 각각 한 번씩 진행해주세요.
+- 제시된 환경에서 주어진 state가 Prop Drilling 패턴으로 전달되는 경우인지 판단하세요.
+
+1. ***Base***
+- App.js 내의 `pageCount`,`filteredItemsId`, `currentAlcoholList`, `dummyAlcoholList` state가 Prop Drilling 패턴으로 전달되는지 판단하세요.
+
+2. ***Test***
+- App.js 내의 `category`,`itemOffset`, `setFilteredAlcoholList`, `filteredItemOffset` state가 Prop Drilling 패턴으로 전달되는지 판단하세요.
 
 ### Task 2. Identifying Components Affected by State-Triggered *useEffect()*
 
@@ -182,5 +197,15 @@ const App = () => {
     - `ComponentB`에서 `stateB` 변경 감지 후 *useEffect()* 실행
 
 ### 📝 ***Problem***
-- Liquor.js의 filteredItemsId state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
+- Liquor.js의 `filteredItemsId` state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
 - Base와 Test 환경에서 각각 한 번씩 진행해주세요.
+
+
+### 📝 ***Problem***
+- 제시된 환경에서 주어진 state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
+
+1. ***Base***
+- Liquor.js의 `filteredItemsId` state가 변경되었을 때
+
+2. ***Test***
+- PaginatedItems.js의 `itemOffset` state가 변경되었을 때
