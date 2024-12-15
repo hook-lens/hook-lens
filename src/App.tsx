@@ -3,12 +3,14 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
 import System from "./components/System";
+import FlowView from "./components/FlowView";
+
 import { DataProps } from "./types/data";
 
 function App() {
   const [isVisualizationPage, setIsVisualizationPage] = useState(false);
   const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
-  const hookExtractor = new HookExtractor();
+  const hookExtractor = useRef(new HookExtractor());
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [data, setData] = useState<DataProps>();
@@ -48,10 +50,11 @@ function App() {
       }
 
       Promise.all(promises).then((results) => {
-        hookExtractor.setProject(results);
-        hookExtractor.print();
-        console.log(hookExtractor.toJson());
-        const data = hookExtractor.toJson();
+        const extractor = hookExtractor.current
+        extractor.setProject(results);
+        extractor.print();
+        // console.log(extractor.toJson());
+        const data = extractor.toJson();
         setData(JSON.parse(data) as DataProps);
       });
     };
@@ -71,8 +74,9 @@ function App() {
     >
       {isVisualizationPage && data ? (
         <div className="Visualization">
-          <System data={data} />
+          {/* <System data={data} /> */}
           {/* 시각화 */}
+          <FlowView hookExtractor={hookExtractor} />
         </div>
       ) : (
         <div className="Upload">

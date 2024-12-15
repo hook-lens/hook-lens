@@ -1,0 +1,35 @@
+button.control {
+  border-radius: 4px;
+  background-color: rgb(125 211 252);
+  transition: background-color 0.1s ease, border 0.3s ease;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+button.control:hover {
+  background-color: rgb(7 89 133);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+button.control:active {
+  background-color: rgb(7 89 133);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset;
+}
+
+button.selected {
+  background-color: rgb(2 132 199);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset;
+}
+
+div.legend {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0 0, 0, 0.2);
+}
