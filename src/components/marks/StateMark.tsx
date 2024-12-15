@@ -32,10 +32,11 @@ export default function StateMark({ data }: NodeProps<StateMarkData>) {
 
       <div
         style={{
+          width: 25,
           fontSize: 9,
           fontWeight: "bold",
           position: "absolute",
-          top: -1,
+          top: -2,
           borderRadius: 2,
           padding: 1,
           left: width + 5,
@@ -46,11 +47,12 @@ export default function StateMark({ data }: NodeProps<StateMarkData>) {
       </div>
       <div
         style={{
+          width: 25,
           zIndex: 100,
           fontSize: 9,
           fontWeight: "bold",
           position: "absolute",
-          top: height - 11,
+          top: height - 10,
           left: width + 5,
           borderRadius: 2,
           padding: 1,
@@ -62,12 +64,12 @@ export default function StateMark({ data }: NodeProps<StateMarkData>) {
       <Handle
         type="source"
         position={Position.Right}
-        style={{ background: "black", top: 5 }}
+        style={{ background: "black", top: 4 }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        style={{ background: "black", top: height - 5 }}
+        style={{ background: "black", top: height - 4 }}
         id="setter"
       />
       <Handle
