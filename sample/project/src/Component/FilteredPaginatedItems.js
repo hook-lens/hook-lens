@@ -6,27 +6,25 @@ import "../Styles/Home.scss";
 import "../Styles/Pagination.css";
 import "../Styles/Reset.css";
 
-function FilteredPaginatedItems({
-  itemsPerPage,
-  pageCount,
-  setPageCount,
-  alcoholList,
-}) {
+function FilteredPaginatedItems(props) {
   const [currentFilteredAlcoholList, setCurrentFilteredAlcoholList] =
     React.useState([]);
   const [filteredItemOffset, setFilteredItemOffset] = React.useState(0);
   const scrollToRef = useRef();
 
   useEffect(() => {
-    const filteredEndOffset = filteredItemOffset + itemsPerPage;
+    const filteredEndOffset = filteredItemOffset + props.itemsPerPage;
     setCurrentFilteredAlcoholList(
-      alcoholList.slice(filteredItemOffset, filteredEndOffset)
+      props.alcoholList.slice(filteredItemOffset, filteredEndOffset)
     );
-    setPageCount(Math.ceil(alcoholList.length / itemsPerPage));
-  }, [alcoholList, filteredItemOffset, itemsPerPage]);
+    props.setPageCount(
+      Math.ceil(props.alcoholList.length / props.itemsPerPage)
+    );
+  }, [props.alcoholList, filteredItemOffset, props.itemsPerPage]);
 
   const handlePageClick = (event) => {
-    const newOffset = (event.selected * itemsPerPage) % alcoholList.length;
+    const newOffset =
+      (event.selected * props.itemsPerPage) % props.alcoholList.length;
     setFilteredItemOffset(newOffset);
   };
   return (
@@ -42,7 +40,7 @@ function FilteredPaginatedItems({
           nextLabel=">"
           onPageChange={handlePageClick}
           pageRangeDisplayed={5}
-          pageCount={pageCount}
+          pageCount={props.pageCount}
           previousLabel="<"
           renderOnZeroPageCount={null}
           containerClassName={"pagination-ul"}
