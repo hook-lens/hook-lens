@@ -13,6 +13,7 @@ button.control:hover {
 }
 
 button.control:active {
+  background-color: rgb(7 89 133);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) inset;
 }
 
@@ -25,7 +26,7 @@ div.legend {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 15px;
   margin-bottom: 10px;
   border-radius: 4px;
   padding: 10px;

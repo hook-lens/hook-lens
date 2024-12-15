@@ -1,12 +1,11 @@
-import { memo } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
-type PropMark = Node<{ label: string }, "prop">;
+type PropMarkData = Node<{ label: string }, "prop">;
 
-export default function PropMark({ data }: NodeProps<PropMark>) {
-  const width = 25;
-  const height = 25;
+export default function PropMark({ data }: NodeProps<PropMarkData>) {
+  const width = 20;
+  const height = 20;
   return (
     <div className="prop">
       <div

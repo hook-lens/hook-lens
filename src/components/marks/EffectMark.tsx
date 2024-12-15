@@ -1,10 +1,9 @@
-import { memo } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
-type EffectMark = Node<{ label: string }, "effect">;
+type EffectMarkData = Node<{ label: string }, "effect">;
 
-export default function EffectMark({ data }: NodeProps<EffectMark>) {
+export default function EffectMark({ data }: NodeProps<EffectMarkData>) {
   const width = 70;
   const height = 25;
   return (

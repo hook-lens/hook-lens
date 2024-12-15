@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
 import System from "./components/System";
-import MainView from "./components/MainView";
+import FlowView from "./components/FlowView";
 
 import { DataProps } from "./types/data";
 
@@ -53,7 +53,7 @@ function App() {
         const extractor = hookExtractor.current
         extractor.setProject(results);
         extractor.print();
-        console.log(extractor.toJson());
+        // console.log(extractor.toJson());
         const data = extractor.toJson();
         setData(JSON.parse(data) as DataProps);
       });
@@ -76,7 +76,7 @@ function App() {
         <div className="Visualization">
           {/* <System data={data} /> */}
           {/* 시각화 */}
-          <MainView hookExtractor={hookExtractor} />
+          <FlowView hookExtractor={hookExtractor} />
         </div>
       ) : (
         <div className="Upload">

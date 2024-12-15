@@ -15,6 +15,7 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useUpdateNodeInternals,
   XYPosition,
 } from "@xyflow/react";
 import HookExtractor, { ComponentNode } from "../module/HookExtractor";
@@ -28,13 +29,13 @@ import StateMark from "./marks/StateMark";
 
 import "./MainView.css";
 
+export interface MainViewProps {
+  hookExtractor: MutableRefObject<HookExtractor>;
+}
+
 interface MarkSize {
   width: number;
   height: number;
-}
-
-interface MainViewProps {
-  hookExtractor: MutableRefObject<HookExtractor>;
 }
 
 const nodeTypes = {
@@ -55,7 +56,7 @@ const defaultAnimationStyle = {
   transition: `width 100ms, height 100ms, transform 100ms`,
 };
 
-const legendStyle = [
+const legendMarkStyle = [
   {
     label: "Component",
     color: "#D9D9D9",
@@ -65,12 +66,40 @@ const legendStyle = [
     color: "#A2845E",
   },
   {
-    label: "State",
+    label: "State / Setter",
     color: "#34C759",
   },
   {
     label: "Effect",
     color: "#32ADE6",
+  },
+];
+
+const legendEdgeStyle = [
+  {
+    label: "Component link",
+    color: "#b1b1b7",
+    style: "solid",
+  },
+  {
+    label: "Effect link",
+    color: "#000000",
+    style: "solid",
+  },
+  {
+    label: "State value - Prop link",
+    color: "#34C759",
+    style: "dashed",
+  },
+  {
+    label: "State setter - Prop link",
+    color: "#A2845E",
+    style: "dashed",
+  },
+  {
+    label: "Concerned link",
+    color: "#FF3B30",
+    style: "dashed",
   },
 ];
 
@@ -80,15 +109,20 @@ function findRoots(
 ): ComponentNode[] {
   const visited: string[] = [];
   const roots: ComponentNode[] = [];
+
   components.forEach((component) => {
     if (visited.includes(component.id)) return;
-    extractor.visitChildren(component, (child) => {
+    extractor.visitDecendent(component, (child) => {
       visited.push(child.id);
     });
   });
+
   components.forEach((component) => {
-    if (!visited.includes(component.id)) roots.push(component);
+    if (!visited.includes(component.id)) {
+      roots.push(component);
+    }
   });
+
   return roots;
 }
 
@@ -161,7 +195,11 @@ function convertEffectEdges(component: ComponentNode) {
           ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
           : { stroke: "black", strokeWidth: innerEdgeWidth },
         animated: depId.startsWith("state") ? true : false,
-        markerStart: MarkerType.Arrow,
+        zIndex: 50,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: depId.startsWith("state") ? "#FF3B30" : "black",
+        },
         data: { component: component.id },
       });
     });
@@ -175,6 +213,11 @@ function convertEffectEdges(component: ComponentNode) {
           ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
           : { stroke: "black", strokeWidth: innerEdgeWidth },
         animated: targetId.startsWith("prop") ? true : false,
+        zIndex: 50,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: targetId.startsWith("prop") ? "#FF3B30" : "black",
+        },
         data: { component: component.id },
       });
     });
@@ -195,27 +238,62 @@ function convertPropEdges(
     const component = node.data.component as ComponentNode;
     component.props.forEach((prop) => {
       prop.references.forEach((ref) => {
-        const target =
-          currentStateNodes.find((target) => target.id === ref) ||
-          currentPropNodes.find((target) => target.id === ref);
+        const isSetter = ref.startsWith("setter");
+        if (isSetter) {
+          const nodeId = ref.replace("setter", "state");
+          const target = currentStateNodes.find(
+            (target) => target.id === nodeId
+          );
 
-        if (!target) return;
-        if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
-          return;
+          if (!target) return;
+          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
+            return;
 
-        newPropEdges.push({
-          id: `${ref}-${prop.id}`,
-          source: ref,
-          target: prop.id,
-          style: ref.startsWith("prop")
-            ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-            : { stroke: "black" },
-          data: {
-            refRoot: target.id,
-            propRoot: component.id,
-          },
-          animated: true,
-        });
+          newPropEdges.push({
+            id: `${ref}-${prop.id}`,
+            source: nodeId,
+            target: prop.id,
+            style: { stroke: "#A2845E" },
+            data: {
+              refRoot: target.id,
+              propRoot: component.id,
+            },
+            zIndex: 50,
+            sourceHandle: "setter",
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: "#A2845E",
+            },
+            animated: true,
+          });
+        } else {
+          const target =
+            currentStateNodes.find((target) => target.id === ref) ||
+            currentPropNodes.find((target) => target.id === ref);
+
+          if (!target) return;
+          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
+            return;
+
+          newPropEdges.push({
+            id: `${ref}-${prop.id}`,
+            source: ref,
+            target: prop.id,
+            style: ref.startsWith("prop")
+              ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
+              : { stroke: "#34C759" },
+            data: {
+              refRoot: target.id,
+              propRoot: component.id,
+            },
+            zIndex: 50,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: ref.startsWith("prop") ? "#FF3B30" : "#34C759",
+            },
+            animated: true,
+          });
+        }
       });
     });
   });
@@ -224,6 +302,7 @@ function convertPropEdges(
 }
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
+  const updateNodeInternals = useUpdateNodeInternals();
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
 
@@ -277,7 +356,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
       maxLevel = Math.max(maxLevel, level);
       node.children.sort(
-        (a, b) => extractor.countChidren(b) - extractor.countChidren(a)
+        (a, b) => extractor.countDecendent(b) - extractor.countDecendent(a)
       );
       node.children.forEach((child) => {
         convertComponentToMark(child, level + 1);
@@ -309,8 +388,12 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: `${component.id}-${child.id}`,
           source: component.id,
           target: child.id,
-          markerEnd: MarkerType.Arrow,
+          zIndex: 50,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
           animated: false,
+          selectable: false,
         });
       });
     });
@@ -321,7 +404,10 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: `${component.id}-${child.id}`,
           source: component.id,
           target: child.id,
-          markerEnd: MarkerType.Arrow,
+          zIndex: 50,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
           animated: true,
         });
       });
@@ -329,54 +415,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
     setComponentEdges(newEdges);
   }, [components, extractor]);
-
-  const expandComponent = (targetNode: Node, currentNodes: Node[]) => {
-    targetNode.type = "expanded";
-
-    const component = targetNode.data.component as ComponentNode;
-    const expandedHeight = Math.max(
-      Math.max(
-        component.props.length,
-        component.effects.length,
-        component.states.length
-      ) *
-        innerMarkGap +
-        20,
-      baseWidth
-    );
-    targetNode.data.size = {
-      width: baseExpadnedWidth,
-      height: expandedHeight,
-    };
-
-    const updatedNodes = currentNodes.map((node) => {
-      if (node.id === targetNode.id) {
-        return { ...targetNode };
-      }
-
-      const updateNode = { ...node };
-      if (
-        expandedLevels.current[targetNode.data.level as number] === 0 &&
-        (updateNode.data.level as number) > (targetNode.data.level as number)
-      ) {
-        (updateNode.data.translatedPosition as XYPosition).x +=
-          baseExpadnedWidth - baseWidth;
-      }
-
-      if (
-        updateNode.data.level === targetNode.data.level &&
-        (updateNode.data.index as number) > (targetNode.data.index as number)
-      ) {
-        (updateNode.data.translatedPosition as XYPosition).y +=
-          (targetNode.data.size as MarkSize).height - baseWidth;
-      }
-
-      updateNode.position = calcNewPosition(updateNode);
-      return updateNode;
-    });
-
-    return updatedNodes;
-  };
 
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -405,8 +443,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           ...convertPropEdges(
             updatedNodes,
             propEdges,
-            updatedPropNodes,
-            updatedStateNodes
+            updatedStateNodes,
+            updatedPropNodes
           ),
         ]);
         expandedLevels.current[node.data.level as number]++;
@@ -423,6 +461,54 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     },
     [componentNodes, propNodes, stateNodes, effectNodes, effectEdges, propEdges]
   );
+
+  const expandComponent = (targetNode: Node, currentNodes: Node[]) => {
+    targetNode.type = "expanded";
+
+    const component = targetNode.data.component as ComponentNode;
+    const expandedHeight = Math.max(
+      Math.max(
+        component.props.length,
+        component.effects.length,
+        component.states.length
+      ) *
+        innerMarkGap +
+        20,
+      baseWidth
+    );
+    targetNode.data.size = {
+      width: baseExpadnedWidth,
+      height: expandedHeight,
+    };
+
+    const updatedNodes = currentNodes.map((node) => {
+      if (node.id === targetNode.id) {
+        return { ...targetNode, position: calcNewPosition(targetNode) };
+      }
+
+      const updateNode = { ...node };
+      if (
+        expandedLevels.current[targetNode.data.level as number] === 0 &&
+        (updateNode.data.level as number) > (targetNode.data.level as number)
+      ) {
+        (updateNode.data.translatedPosition as XYPosition).x +=
+          baseExpadnedWidth - baseWidth;
+      }
+
+      if (
+        updateNode.data.level === targetNode.data.level &&
+        (updateNode.data.index as number) > (targetNode.data.index as number)
+      ) {
+        (updateNode.data.translatedPosition as XYPosition).y +=
+          (targetNode.data.size as MarkSize).height - baseWidth;
+      }
+
+      updateNode.position = calcNewPosition(updateNode);
+      return updateNode;
+    });
+
+    return updatedNodes;
+  };
 
   const shrinkComponent = (targetNode: Node, currentNodes: Node[]) => {
     targetNode.type = "component";
@@ -543,8 +629,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           ...convertPropEdges(
             updatedComponentNodes,
             updatedPropEdges,
-            updatedPropNodes,
-            updatedStateNodes
+            updatedStateNodes,
+            updatedPropNodes
           )
         );
         expandedLevels.current[node.data.level as number]++;
@@ -556,6 +642,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     setStateNodes(updatedStateNodes);
     setEffectNodes(updatedEffectNodes);
     setEffectEdges(updatedEffectEdges);
+    console.log("updatedPropEdges", updatedPropEdges);
     setPropEdges(updatedPropEdges);
   }, [
     componentNodes,
@@ -583,19 +670,16 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   }, [componentNodes]);
 
   useEffect(() => {
+    updateNodeInternals(nodes.map((n) => n.id));
+  }, [nodes, updateNodeInternals]);
+
+  useEffect(() => {
     setNodes([...componentNodes, ...effectNodes, ...propNodes, ...stateNodes]);
+  }, [componentNodes, propNodes, stateNodes, effectNodes, setNodes]);
+
+  useEffect(() => {
     setEdges([...componentEdges, ...effectEdges, ...propEdges]);
-  }, [
-    componentNodes,
-    propNodes,
-    stateNodes,
-    effectNodes,
-    componentEdges,
-    effectEdges,
-    propEdges,
-    setNodes,
-    setEdges,
-  ]);
+  }, [componentEdges, effectEdges, propEdges, setEdges]);
 
   return (
     <div
@@ -625,33 +709,93 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           }}
         >
           <div className="legend">
-            {legendStyle.map((legend) => (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
               <div
-                key={legend.label}
                 style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  gap: 5,
-                  alignItems: "center",
+                  fontSize: 14,
+                  fontWeight: "bold",
                 }}
               >
+                Mark
+              </div>
+              {legendMarkStyle.map((legend) => (
                 <div
+                  key={legend.label}
                   style={{
-                    borderRadius: 2,
-                    backgroundColor: legend.color,
-                    width: 15,
-                    height: 15,
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: 14,
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: 5,
+                    alignItems: "center",
                   }}
                 >
-                  {legend.label}
+                  <div
+                    style={{
+                      borderRadius: 2,
+                      backgroundColor: legend.color,
+                      width: 30,
+                      height: 15,
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 14,
+                    }}
+                  >
+                    {legend.label}
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                }}
+              >
+                Edge
               </div>
-            ))}
+              {legendEdgeStyle.map((legend) => (
+                <div
+                  key={legend.label}
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: 5,
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      borderRadius: 2,
+                      border: `2px ${legend.style} ${legend.color}`,
+                      width: 26,
+                      height: 3,
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 14,
+                    }}
+                  >
+                    {legend.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
           <button className="control" onClick={expandAllComponents}>
             Expand all

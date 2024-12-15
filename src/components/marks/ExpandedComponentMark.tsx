@@ -1,11 +1,10 @@
-import { memo, useEffect } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 import { ComponentNode } from "../../module/HookExtractor";
 
 import "./ComponentStyle.css";
 
-type ExpandedComponentMark = Node<
+type ExpandedComponentMarkData = Node<
   {
     label: string;
     component: ComponentNode;
@@ -19,7 +18,7 @@ type ExpandedComponentMark = Node<
 
 export default function ExpandedComponentMark({
   data,
-}: NodeProps<ExpandedComponentMark>) {
+}: NodeProps<ExpandedComponentMarkData>) {
   return (
     <div className="expanded">
       <div className="label">{data.label}</div>

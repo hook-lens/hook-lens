@@ -50,13 +50,6 @@ export class ComponentNode {
     this.node = node;
   }
 
-  public visitChildren(callback: (node: ComponentNode) => void) {
-    for (const child of this.children) {
-      callback(child);
-      child.visitChildren(callback);
-    }
-  }
-
   public getStateById(id: string) {
     return this.states.find((state) => state.id === id);
   }
@@ -67,6 +60,10 @@ export class ComponentNode {
 
   public getStateBySetter(setter: string) {
     return this.states.find((state) => state.setter === setter);
+  }
+
+  public getStateBySetterId(setterId: string) {
+    return this.states.find((state) => state.setterId === setterId);
   }
 
   public getPropById(id: string) {
@@ -84,14 +81,17 @@ export class ComponentNode {
 
 export class StateNode {
   private static idGenerator = new UniqueIdGenerator("state");
+  private static setterIdGenerator = new UniqueIdGenerator("setter");
 
   readonly id: string;
+  readonly setterId: string;
   readonly name: string;
   readonly root: ComponentNode;
   readonly setter: string;
 
   constructor(name: string, root: ComponentNode, setter: string) {
     this.id = StateNode.idGenerator.next();
+    this.setterId = StateNode.setterIdGenerator.next();
     this.name = name;
     this.root = root;
     this.setter = setter;
@@ -228,7 +228,7 @@ export default class HookExtractor {
     this.linkEffects();
   }
 
-  public extractComponents(source: string, content: string) {
+  private extractComponents(source: string, content: string) {
     console.info("extractComponents", source);
 
     const ast = this.parseJsFile(content);
@@ -257,7 +257,7 @@ export default class HookExtractor {
     console.info("extractComponents - All components", this.componentList);
   }
 
-  public parseJsFile(code: string) {
+  private parseJsFile(code: string) {
     return espree.parse(code, {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -328,24 +328,13 @@ export default class HookExtractor {
   private extractStates(astComponent: acorn.Node, component: ComponentNode) {
     console.log("extractStates", astComponent);
     const states: StateNode[] = [];
-    const isCalleeUseState = (callee: acorn.Expression | acorn.Super) => {
-      if (callee.type === "Identifier") {
-        return (callee as acorn.Identifier).name === "useState";
-      }
-
-      if (callee.type === "MemberExpression") {
-        return (callee.property as acorn.Identifier).name === "useState";
-      }
-
-      return false;
-    };
 
     walk.fullAncestor(astComponent, (node, state, ancestor) => {
       if (node.type !== "CallExpression") {
         return;
       }
 
-      if (!isCalleeUseState((node as acorn.CallExpression).callee)) {
+      if (!this.isCalleeUseState((node as acorn.CallExpression).callee)) {
         return;
       }
 
@@ -363,6 +352,18 @@ export default class HookExtractor {
     });
 
     return states;
+  }
+
+  private isCalleeUseState(callee: acorn.Expression | acorn.Super) {
+    if (callee.type === "Identifier") {
+      return (callee as acorn.Identifier).name === "useState";
+    }
+
+    if (callee.type === "MemberExpression") {
+      return (callee.property as acorn.Identifier).name === "useState";
+    }
+
+    return false;
   }
 
   private newStateNode(root: ComponentNode, name: string, setter: string) {
@@ -469,7 +470,7 @@ export default class HookExtractor {
     );
   }
 
-  public linkComponents() {
+  private linkComponents() {
     console.info("linkComponents");
     this.componentList.forEach((component) => {
       walk.full(component.node, (node) => {
@@ -524,9 +525,8 @@ export default class HookExtractor {
         const expression = attribute.value.expression;
         const findAndPushReferenceId = (name: string, targetProp: PropNode) => {
           const reference =
-            parent.getStateByName(name) ||
-            parent.getStateBySetter(name) ||
-            parent.getPropByName(name);
+            parent.getStateByName(name) || parent.getPropByName(name);
+          const setter = parent.getStateBySetter(name);
 
           if (
             reference &&
@@ -534,6 +534,11 @@ export default class HookExtractor {
             !targetProp.references.includes(reference.id)
           ) {
             targetProp.references.push(reference.id);
+          } else if (
+            setter &&
+            !targetProp.references.includes(setter.setterId)
+          ) {
+            targetProp.references.push(setter.setterId);
           }
         };
 
@@ -556,7 +561,7 @@ export default class HookExtractor {
             const targetProp = component.getPropByName(prop.name);
             if (!targetProp) {
               console.log("extractAttribute - new prop", component, prop);
-              const newProp = this.newPropNode(component, prop.name)
+              const newProp = this.newPropNode(component, prop.name);
               newProp.references.push(prop.id);
               component.props.push(newProp);
             }
@@ -566,7 +571,7 @@ export default class HookExtractor {
     }
   }
 
-  public linkEffects() {
+  private linkEffects() {
     this.componentList.forEach((component) => {
       const effects = this.extractEffects(component);
       component.effects = effects;
@@ -677,7 +682,7 @@ export default class HookExtractor {
       "Chidren count",
       this.componentList.map((component) => ({
         component: component,
-        count: this.countChidren(component),
+        count: this.countDecendent(component),
       }))
     );
   }
@@ -771,7 +776,7 @@ export default class HookExtractor {
     return JSON.stringify(json, null, 2);
   }
 
-  public visitChildren(
+  public visitDecendent(
     component: ComponentNode,
     callback: (node: ComponentNode) => void
   ) {
@@ -783,14 +788,18 @@ export default class HookExtractor {
 
       visited.push(child.id);
       callback(child);
-      this.visitChildren(child, callback);
+      this.visitDecendent(child, callback);
     });
   }
 
-  public countChidren(component: ComponentNode) {
+  public countDecendent(component: ComponentNode) {
     let count = 0;
-    this.visitChildren(component, () => {
-      count += 1;
+    let visited: string[] = [];
+    this.visitDecendent(component, (node) => {
+      if (!visited.includes(node.id)) {
+        count += 1;
+        visited.push(node.id);
+      }
     });
 
     return count;
