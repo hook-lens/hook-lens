@@ -12,15 +12,7 @@ import FilteredPaginatedItems from "../Component/FilteredPaginatedItems";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../Firebase/service";
 
-function Liquor({
-  dummyAlcoholList,
-  filteredAlcoholList,
-  setFilteredAlcoholList,
-  filteredItemOffset,
-  setFilteredItemOffset,
-  filteredItemsId,
-  setFilteredItemsId,
-}) {
+function Liquor(props) {
   const [user, loading, error] = useAuthState(auth);
   const alcoholList = useRecoilValue(alcoholListState);
   const [filteredPageCount, setFilteredPageCount] = React.useState(1);
@@ -39,8 +31,8 @@ function Liquor({
 
   useEffect(() => {
     if (parseInt(params.id) === 1) {
-      setFilteredItemsId(1);
-      setFilteredAlcoholList(
+      props.setFilteredItemsId(1);
+      props.setFilteredAlcoholList(
         alcoholList.filter(
           (e) =>
             e.typeofAlcohol.includes("탁주") ||
@@ -48,8 +40,8 @@ function Liquor({
         )
       );
     } else if (parseInt(params.id) === 2) {
-      setFilteredItemsId(2);
-      setFilteredAlcoholList(
+      props.setFilteredItemsId(2);
+      props.setFilteredAlcoholList(
         alcoholList.filter(
           (e) =>
             e.typeofAlcohol.includes("청주") ||
@@ -58,8 +50,8 @@ function Liquor({
         )
       );
     } else if (parseInt(params.id) === 3) {
-      setFilteredItemsId(3);
-      setFilteredAlcoholList(
+      props.setFilteredItemsId(3);
+      props.setFilteredAlcoholList(
         alcoholList.filter((e) => {
           return (
             e.typeofAlcohol.includes("과실") ||
@@ -69,8 +61,8 @@ function Liquor({
         })
       );
     } else if (parseInt(params.id) === 4) {
-      setFilteredItemsId(4);
-      setFilteredAlcoholList(
+      props.setFilteredItemsId(4);
+      props.setFilteredAlcoholList(
         alcoholList.filter(
           (e) =>
             e.typeofAlcohol.includes("증류") ||
@@ -79,9 +71,9 @@ function Liquor({
         )
       );
     }
-    setFilteredItemOffset(0);
+    props.setFilteredItemOffset(0);
     setFilteredPageCount(1);
-  }, [params.id, filteredItemsId]);
+  }, [params.id, props.filteredItemsId]);
 
   return (
     <>
@@ -89,7 +81,7 @@ function Liquor({
         itemsPerPage={28}
         pageCount={filteredPageCount}
         setPageCount={setFilteredPageCount}
-        alcoholList={filteredAlcoholList}
+        alcoholList={props.filteredAlcoholList}
       />
     </>
   );
