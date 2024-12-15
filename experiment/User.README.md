@@ -130,10 +130,10 @@ const Child3 = ({ prop2 }) => {
 - 제시된 환경에서 주어진 state가 Prop Drilling 패턴으로 전달되는 경우인지 판단하세요.
 
 1. ***Base***
-- App.js 내의 `pageCount`,`filteredItemsId`, `currentAlcoholList`, `dummyAlcoholList` state가 Prop Drilling 패턴으로 전달되는지 판단하세요.
+- App.js 내의 `pageCount`,`filteredItemsId`, `currentAlcoholList`, `dummyAlcoholList` state가 Prop Drilling 패턴으로 전달되는지 판단하고 걸린 시간을 측정하세요.
 
 2. ***Test***
-- App.js 내의 `category`,`itemOffset`, `setFilteredAlcoholList`, `filteredItemOffset` state가 Prop Drilling 패턴으로 전달되는지 판단하세요.
+- App.js 내의 `category`,`itemOffset`, `setFilteredAlcoholList`, `filteredItemOffset` state가 Prop Drilling 패턴으로 전달되는지 판단하고 걸린 시간을 하세요.
 
 ### Task 2. Identifying Components Affected by State-Triggered *useEffect()*
 
