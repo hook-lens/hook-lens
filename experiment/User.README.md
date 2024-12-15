@@ -12,7 +12,28 @@
 - Base : VSCode + React Dev Tool
 - Test : VSCode + React Dev Tool + HookLens
 
-### Project Structure
+#### Base Environment
+```
+git clone https://github.com/Suyeon-Stom-Hwang/HookLens.git
+```
+
+- /HookLens/sample/project 내에 실험용 프로젝트가 있습니다.
+
+#### Test Environment
+```
+// Project Clone
+cd HookLens
+yarn install
+yarn start
+```
+![image](../public/hooklens.png)
+
+1. ***Select Files***를 클릭하고 project 폴더를 선택하세요.
+2. ***Go to Visualization*** 버튼이 활성화되면 클릭하세요.
+![image](../public/overview.png)
+3. ***Node***를 클릭하면 해당 Component의 상세 정보를 확인할 수 있습니다.
+
+### Example Project Structure
 ```
 project
 ├── README.md
@@ -92,25 +113,12 @@ const Child3 = ({ prop1 }) => {
    - 최종적으로 사용된 prop: `prop1` (Child3 컴포넌트에서 사용)
    - 사용되지 않은 props: `prop2`, `prop3`는 자식 계층에서 전혀 사용되지 않음
 
-#### 3️⃣ **난이도 설정**
-Prop Drilling의 복잡성을 세 가지 난이도로 구분하여 실험합니다:
-
-1. **상 (High)**  
-   - 자식 컴포넌트에서 모든 prop을 `props.propName` 형태로 직접 사용
-   - 중간 컴포넌트의 수가 많고, Prop Drilling의 깊이가 4 이상인 경우
-
-2. **중 (Medium)**  
-   - 자식 컴포넌트에서 prop을 구조 분해 할당 후 사용
-   - Prop Drilling의 깊이는 3 이하
-
-3. **하 (Low)**  
-   - 중간 컴포넌트 없이 부모 -> 자식으로 직접 props 전달 
-
 
 ### 📝 ***Problem***
 - Example Project에서 Prop Drilling에 해당하는 props를 ***10분*** 내에 모두 찾으세요.
 - App.js 파일에서 시작하여 하위 컴포넌트로 이동하면서 props를 확인하세요.
 - 찾은 props의 이름을 적어주세요.
+- Base와 Test 환경에서 각각 한 번씩 진행해주세요.
 
 ### Task 2. Identifying Components Affected by State-Triggered *useEffect()*
 
@@ -173,58 +181,6 @@ const App = () => {
     - `ComponentA`의 *useEffect()* 내에서 `stateB` 변경
     - `ComponentB`에서 `stateB` 변경 감지 후 *useEffect()* 실행
 
-
 ### 📝 ***Problem***
 - Liquor.js의 filteredItemsId state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
-
-## Task 1. 정답
-
-### App.js → Home.js → PaginatedItems → Items.js
-
-- **pageCount 中**
-    - App.js -> Home.js -> PaginatedItems.js
-    - PaginatedItems.js에서 사용
-- **setPageCount 中**
-    - App.js -> Home.js -> PaginatedItems.js
-    - PaginatedItems.js에서 사용
-- **currentAlcoholList 上**
-    - App.js -> Home.js -> PaginatedItems.js -> Items.js
-    - Items.js에서 사용
-- **setCurrentAlcoholList 中**
-    - App.js -> Home.js -> PaginatedItems.js
-    - PaginatedItems.js에서 사용
-- **itemOffset 中**
-    - App.js -> Home.js -> PaginatedItems.js
-    - PaginatedItems.js에서 사용
-- **setItemOffset 中**
-    - App.js -> Home.js -> PaginatedItems.js
-    - PaginatedItems.js에서 사용
-- **category 上**
-    - App.js -> Home.js -> PaginatedItems.js
-    - Home.js에서 사용
-
-### App.js → Liquor.js → FilteredPaginatedItems.js → FilteredItems.js
-
-- **dummyAlcoholList**
-    - App.js -> Liquor.js **下**
-    - 사용되지 않음
-- **filteredAlcoholList(alcoholList) 中**
-    - App.js -> Liquor.js -> FilteredPaginatedItems
-    - FilteredPaginatedItems.js에서 사용
-- **filteredItemOffset 下**
-    - App.js -> Liquor.js
-    - 사용되지 않음
-
-### App.js → Details.js → KakaoRecommendButton.js
-
-- **dummyAlcoholList 下**
-    - App.js -> Details.js
-    - 사용되지 않음
-- **setDummyAlcoholList 下**
-    - App.js -> Details.js
-    - 사용되지 않음
-
-## Task 2. 정답
-### App.js → Liquor.js → FilteredPaginatedItems.js → FilteredItems.js
-
-- filteredItemsId → effect_10(Liquor.js) → filteredAlcoholList → effect_4(FilteredPaginatedItems.js) → currentAlcoholList(FilteredItems.js)
+- Base와 Test 환경에서 각각 한 번씩 진행해주세요.
