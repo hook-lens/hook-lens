@@ -5,11 +5,11 @@ button.control {
   color: white;
   font-size: 14px;
   font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 button.control:hover {
   background-color: rgb(7 89 133);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 button.control:active {
@@ -32,4 +32,11 @@ div.legend {
   padding: 10px;
   background-color: white;
   box-shadow: 0 1px 4px rgba(0 0, 0, 0.2);
+}
+
+div.legendTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  text-shadow: 0 1px 4px rgba(0 0, 0, 0.2);
 }

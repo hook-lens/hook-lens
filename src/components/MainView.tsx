@@ -26,6 +26,8 @@ import ExpandedComponentMark from "./marks/ExpandedComponentMark";
 import EffectMark from "./marks/EffectMark";
 import PropMark from "./marks/PropMark";
 import StateMark from "./marks/StateMark";
+import NodeLegendItem from "./NodeLegendItem";
+import EdgeLegendItem from "./EdgeLegendItem";
 
 import "./MainView.css";
 
@@ -699,111 +701,78 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         fitView
         attributionPosition="bottom-left"
       >
-        <MiniMap position="top-left" pannable />
-        <Panel
-          position="top-left"
+        <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            transform: "translate(0px, 200px)",
+            backgroundColor: "white",
+            width: 200,
+            position: "relative",
+            height: "100vh",
+            padding: 15,
+            zIndex: 100,
+            borderRight: "2px solid #ccc",
           }}
         >
-          <div className="legend">
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 5,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                }}
-              >
-                Mark
-              </div>
-              {legendMarkStyle.map((legend) => (
-                <div
-                  key={legend.label}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 5,
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRadius: 2,
-                      backgroundColor: legend.color,
-                      width: 30,
-                      height: 15,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 14,
-                    }}
-                  >
-                    {legend.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 5,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                }}
-              >
-                Edge
-              </div>
-              {legendEdgeStyle.map((legend) => (
-                <div
-                  key={legend.label}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 5,
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRadius: 2,
-                      border: `2px ${legend.style} ${legend.color}`,
-                      width: 26,
-                      height: 3,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 14,
-                    }}
-                  >
-                    {legend.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              textShadow: "0 1px 4px rgba(0,0,0,0.2)",
+            }}
+          >
+            HookLens
           </div>
-          <button className="control" onClick={expandAllComponents}>
-            Expand all
-          </button>
-          <button className="control" onClick={shrinkAllComponents}>
-            Shrink all
-          </button>
-        </Panel>
+          <MiniMap
+            position="top-left"
+            pannable
+            style={{
+              transform: "translate(0px, 50px)",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+            }}
+          />
+
+          <Panel
+            position="top-left"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              transform: "translate(0px, 220px)",
+            }}
+          >
+            <div className="legend">
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 5,
+                }}
+              >
+                <div className="legendTitle">Mark</div>
+                {legendMarkStyle.map((legend) => (
+                  <NodeLegendItem key={legend.label} {...legend} />
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 5,
+                }}
+              >
+                <div className="legendTitle">Edge</div>
+                {legendEdgeStyle.map((legend) => (
+                  <EdgeLegendItem key={legend.label} {...legend} />
+                ))}
+              </div>
+            </div>
+            <button className="control" onClick={expandAllComponents}>
+              Expand all
+            </button>
+            <button className="control" onClick={shrinkAllComponents}>
+              Shrink all
+            </button>
+          </Panel>
+        </div>
       </ReactFlow>
     </div>
   );
