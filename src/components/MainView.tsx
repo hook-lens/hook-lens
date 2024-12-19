@@ -694,7 +694,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         edges={edges}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
-        minZoom={1}
+        minZoom={0.5}
         maxZoom={4}
         fitView
         attributionPosition="bottom-left"
