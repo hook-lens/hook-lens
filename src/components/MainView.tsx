@@ -257,7 +257,7 @@ function convertPropEdges(
             target: prop.id,
             style: { stroke: "#A2845E" },
             data: {
-              refRoot: target.id,
+              refRoot: target.parentId,
               propRoot: component.id,
             },
             zIndex: 50,
@@ -285,7 +285,7 @@ function convertPropEdges(
               ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
               : { stroke: "#34C759" },
             data: {
-              refRoot: target.id,
+              refRoot: target.parentId,
               propRoot: component.id,
             },
             zIndex: 50,
@@ -301,6 +301,30 @@ function convertPropEdges(
   });
 
   return newPropEdges;
+}
+
+function updateComponentEdges(componentEdges: Edge[], propEdges: Edge[]) {
+  console.info("updateComponentEdges", componentEdges, propEdges);
+  const newComponentEdges: Edge[] = [];
+  componentEdges.forEach((edge) => {
+    const source = edge.source;
+    const target = edge.target;
+
+    let isDetailedEdgeExist = false;
+    propEdges.forEach((propEdge) => {
+      if (propEdge.data?.refRoot === source && propEdge.data?.propRoot === target) {
+        isDetailedEdgeExist = true;
+      }
+    });
+
+    if (isDetailedEdgeExist) {
+      newComponentEdges.push({ ...edge, hidden: true });
+    } else {
+      newComponentEdges.push({ ...edge, hidden: false });
+    }
+  });
+
+  return newComponentEdges;
 }
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
@@ -391,6 +415,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           source: component.id,
           target: child.id,
           zIndex: 50,
+          hidden: false,
           markerEnd: {
             type: MarkerType.ArrowClosed,
           },
@@ -400,20 +425,20 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       });
     });
 
-    components.forEach((component) => {
-      component.falseChildren.forEach((child) => {
-        newEdges.push({
-          id: `${component.id}-${child.id}`,
-          source: component.id,
-          target: child.id,
-          zIndex: 50,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-          },
-          animated: true,
-        });
-      });
-    });
+    // components.forEach((component) => {
+    //   component.falseChildren.forEach((child) => {
+    //     newEdges.push({
+    //       id: `${component.id}-${child.id}`,
+    //       source: component.id,
+    //       target: child.id,
+    //       zIndex: 50,
+    //       markerEnd: {
+    //         type: MarkerType.ArrowClosed,
+    //       },
+    //       animated: true,
+    //     });
+    //   });
+    // });
 
     setComponentEdges(newEdges);
   }, [components, extractor]);
@@ -440,7 +465,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
         setEffectNodes([...effectNodes, ...convertEffectNodes(component)]);
         setEffectEdges([...effectEdges, ...convertEffectEdges(component)]);
-        setPropEdges([
+        const updatedPropEdges = [
           ...propEdges,
           ...convertPropEdges(
             updatedNodes,
@@ -448,20 +473,32 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             updatedStateNodes,
             updatedPropNodes
           ),
-        ]);
+        ];
+        setPropEdges(updatedPropEdges);
+        setComponentEdges(updateComponentEdges(componentEdges, updatedPropEdges));
         expandedLevels.current[node.data.level as number]++;
       } else {
         expandedLevels.current[node.data.level as number]--;
-        setPropEdges([...removePropEdges(component, propEdges)]);
+        const updatedPropEdges = removePropEdges(component, propEdges);
+        setPropEdges(updatedPropEdges);
         setEffectEdges([...removeEffectEdges(component, effectEdges)]);
         setPropNodes([...removePropNodes(component, propNodes)]);
         setStateNodes([...removeStateNodes(component, stateNodes)]);
         setEffectNodes([...removeEffectNodes(component, effectNodes)]);
 
         setComponentNodes(shrinkComponent(node, updatedNodes));
+        setComponentEdges(updateComponentEdges(componentEdges, updatedPropEdges));
       }
     },
-    [componentNodes, propNodes, stateNodes, effectNodes, effectEdges, propEdges]
+    [
+      componentNodes,
+      propNodes,
+      stateNodes,
+      effectNodes,
+      componentEdges,
+      effectEdges,
+      propEdges,
+    ]
   );
 
   const expandComponent = (targetNode: Node, currentNodes: Node[]) => {
@@ -646,11 +683,13 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     setEffectEdges(updatedEffectEdges);
     console.log("updatedPropEdges", updatedPropEdges);
     setPropEdges(updatedPropEdges);
+    setComponentEdges(updateComponentEdges(componentEdges, updatedPropEdges));
   }, [
     componentNodes,
     propNodes,
     stateNodes,
     effectNodes,
+    componentEdges,
     effectEdges,
     propEdges,
   ]);
@@ -669,7 +708,8 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     setEffectEdges([]);
     setPropEdges([]);
     setComponentNodes(updatedComponentNodes);
-  }, [componentNodes]);
+    setComponentEdges(componentEdges.map((e) => ({ ...e, hidden: false })));
+  }, [componentNodes, componentEdges]);
 
   useEffect(() => {
     updateNodeInternals(nodes.map((n) => n.id));

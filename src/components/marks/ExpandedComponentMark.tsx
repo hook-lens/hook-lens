@@ -36,13 +36,11 @@ export default function ExpandedComponentMark({
         type="source"
         position={Position.Right}
         style={{ background: "#555" }}
-        onConnect={(params) => console.log("handle onConnect", params)}
       />
       <Handle
         type="target"
         position={Position.Left}
         style={{ background: "#555" }}
-        onConnect={(params) => console.log("handle onConnect", params)}
       />
     </div>
   );
