@@ -25,12 +25,13 @@ export class ComponentNode {
   readonly fileAst: acorn.Node;
   readonly node: acorn.Node;
 
-  name: string;
-  props: PropNode[];
-  states: StateNode[];
-  effects: EffectNode[];
-  children: ComponentNode[];
-  falseChildren: ComponentNode[];
+  readonly name: string;
+  readonly props: PropNode[];
+  readonly states: StateNode[];
+  readonly effects: EffectNode[];
+  readonly children: ComponentNode[];
+
+  propObjectName: string;
 
   constructor(
     name: string,
@@ -45,9 +46,9 @@ export class ComponentNode {
     this.states = [];
     this.effects = [];
     this.children = [];
-    this.falseChildren = [];
     this.fileAst = fileAst;
     this.node = node;
+    this.propObjectName = "props";
   }
 
   public getStateById(id: string) {
@@ -318,17 +319,18 @@ export default class HookExtractor {
     node: acorn.Node
   ) {
     const newComponent = new ComponentNode(name, path, fileAst, node);
-    newComponent.states = this.extractStates(node, newComponent);
-    newComponent.props = this.extractProps(node, newComponent);
+    this.extractAndPushStates(node, newComponent);
+    this.extractAndPushProps(node, newComponent);
 
     this.componentList.push(newComponent);
     return newComponent;
   }
 
-  private extractStates(astComponent: acorn.Node, component: ComponentNode) {
-    console.log("extractStates", astComponent);
-    const states: StateNode[] = [];
-
+  private extractAndPushStates(
+    astComponent: acorn.Node,
+    component: ComponentNode
+  ) {
+    console.info("extractAndPushStates", astComponent);
     walk.fullAncestor(astComponent, (node, state, ancestor) => {
       if (node.type !== "CallExpression") {
         return;
@@ -338,20 +340,19 @@ export default class HookExtractor {
         return;
       }
 
-      console.log("CallExpression", node, ancestor.slice(0));
+      console.log("extractAndPushStates - useState", node, ancestor.slice(0));
       const parent = ancestor[ancestor.length - 2];
       if (!parent || parent.type !== "VariableDeclarator") {
         return;
       }
 
-      const returnValue = (parent as acorn.VariableDeclarator)
-        .id as acorn.ArrayPattern;
-      const name = (returnValue.elements[0] as acorn.Identifier).name;
-      const setter = (returnValue.elements[1] as acorn.Identifier).name;
-      states.push(this.newStateNode(component, name, setter));
+      const returnValues = (
+        (parent as acorn.VariableDeclarator).id as acorn.ArrayPattern
+      ).elements;
+      const name = (returnValues[0] as acorn.Identifier).name;
+      const setter = (returnValues[1] as acorn.Identifier).name;
+      component.states.push(this.newStateNode(component, name, setter));
     });
-
-    return states;
   }
 
   private isCalleeUseState(callee: acorn.Expression | acorn.Super) {
@@ -373,28 +374,31 @@ export default class HookExtractor {
     return newState;
   }
 
-  private extractProps(astComponent: acorn.Node, component: ComponentNode) {
-    console.log("extractProps", astComponent);
-    const props: PropNode[] = [];
+  private extractAndPushProps(
+    astComponent: acorn.Node,
+    component: ComponentNode
+  ) {
+    console.info("extractProps", astComponent);
     const params =
       astComponent.type === "ArrowFunctionExpression"
         ? (astComponent as acorn.ArrowFunctionExpression).params
         : (astComponent as acorn.FunctionDeclaration).params;
 
     if (params.length === 0) {
-      return props;
+      return;
     }
 
-    if (params.length === 1 && params[0].type === "ObjectPattern") {
-      for (const property of (params[0] as acorn.ObjectPattern).properties) {
+    // Desturcturing props
+    if (params[0].type === "ObjectPattern") {
+      params[0].properties.forEach((property) => {
         if (property.type === "Property") {
           const name = (property.key as acorn.Identifier).name;
-          props.push(this.newPropNode(component, name));
+          component.props.push(this.newPropNode(component, name));
         }
-      }
+      });
+    } else if (params[0].type === "Identifier") {
+      component.propObjectName = (params[0] as acorn.Identifier).name;
     }
-
-    return props;
   }
 
   private newPropNode(root: ComponentNode, name: string) {
@@ -487,22 +491,6 @@ export default class HookExtractor {
         this.extractAttributes(child, openingElement.attributes, component);
         component.children.push(child);
       });
-
-      const importedComponents = this.extractImportedComponents(
-        component.fileAst,
-        component.path
-      );
-
-      importedComponents.forEach((id) => {
-        if (component.getChildById(id)) {
-          return;
-        }
-
-        const target = this.getComponentById(id);
-        if (!target) return;
-
-        component.falseChildren.push(target);
-      });
     });
   }
 
@@ -573,15 +561,13 @@ export default class HookExtractor {
 
   private linkEffects() {
     this.componentList.forEach((component) => {
-      const effects = this.extractEffects(component);
-      component.effects = effects;
+      this.extractAndPushEffects(component);
     });
   }
 
-  private extractEffects(component: ComponentNode) {
+  private extractAndPushEffects(component: ComponentNode) {
+    console.info("extractAndPushEffects", component);
     const astComponent = component.node;
-
-    const effects: EffectNode[] = [];
     walk.full(astComponent, (node) => {
       if (node.type !== "CallExpression") {
         return;
@@ -592,25 +578,36 @@ export default class HookExtractor {
         return;
       }
 
+      // FIXME: Make trace callstack
       const name = callee.name;
-      console.log("extractEffects", node);
+      console.log("extractAndPushEffects - callee", node);
       const args = (node as acorn.CallExpression).arguments;
-      const dependencieIds = args[1]
-        ? (args[1] as acorn.ArrayExpression).elements
-            .filter((element) => {
-              const name = (element as acorn.Identifier).name;
-              return (
-                component.getStateByName(name) || component.getPropByName(name)
-              );
-            })
-            .map((element) => {
-              const name = (element as acorn.Identifier).name;
-              return (component.getStateByName(name)?.id ||
-                component.getPropByName(name)?.id) as string;
-            })
-        : [];
+      const dependencieIds: string[] = [];
 
-      console.log("dependency", dependencieIds);
+      if (args[1] && args[1].type === "ArrayExpression") {
+        args[1].elements.forEach((element) => {
+          if (!element) return;
+
+          let name = "";
+          if (element.type === "Identifier") {
+            name = element.name;
+          } else if (
+            element.type === "MemberExpression" &&
+            (element.object as acorn.Identifier).name ===
+              component.propObjectName
+          ) {
+            name = (element.property as acorn.Identifier).name;
+          }
+
+          const target =
+            component.getStateByName(name) || component.getPropByName(name);
+          if (target && !dependencieIds.includes(target.id)) {
+            dependencieIds.push(target.id);
+          }
+        });
+      }
+
+      console.log("extractAndPushEffects - dependencies", dependencieIds);
       const handlingTargetIds = this.extractCallExpression(component, args[0]);
       const effect = this.newEffectNode(
         component,
@@ -619,10 +616,8 @@ export default class HookExtractor {
         handlingTargetIds,
         dependencieIds
       );
-      effects.push(effect);
+      component.effects.push(effect);
     });
-
-    return effects;
   }
 
   private extractCallExpression(

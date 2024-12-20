@@ -58,52 +58,52 @@ const defaultAnimationStyle = {
   transition: `width 100ms, height 100ms, transform 100ms`,
 };
 
-const legendMarkStyle = [
-  {
+const markStyles = {
+  component: {
     label: "Component",
     color: "#D9D9D9",
   },
-  {
+  prop: {
     label: "Prop",
     color: "#A2845E",
   },
-  {
+  state: {
     label: "State / Setter",
     color: "#34C759",
   },
-  {
+  effect: {
     label: "Effect",
     color: "#32ADE6",
   },
-];
+};
 
-const legendEdgeStyle = [
-  {
+const edgeStyles = {
+  component: {
     label: "Component link",
     color: "#b1b1b7",
     style: "solid",
   },
-  {
+  effect: {
     label: "Effect link",
-    color: "#000000",
+    color: "#32ADE6",
     style: "solid",
   },
-  {
+  stateValueProp: {
     label: "State value - Prop link",
     color: "#34C759",
     style: "dashed",
   },
-  {
+  stateSetterProp: {
     label: "State setter - Prop link",
     color: "#A2845E",
     style: "dashed",
   },
-  {
+  concernedLink: {
     label: "Concerned link",
     color: "#FF3B30",
     style: "dashed",
   },
-];
+};
 
 function findRoots(
   components: ComponentNode[],
@@ -194,13 +194,18 @@ function convertEffectEdges(component: ComponentNode) {
         source: depId,
         target: effect.id,
         style: depId.startsWith("state")
-          ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-          : { stroke: "black", strokeWidth: innerEdgeWidth },
+          ? {
+              stroke: edgeStyles.concernedLink.color,
+              strokeWidth: innerEdgeWidth,
+            }
+          : { stroke: edgeStyles.effect.color },
         animated: depId.startsWith("state") ? true : false,
         zIndex: 50,
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: depId.startsWith("state") ? "#FF3B30" : "black",
+          color: depId.startsWith("state")
+            ? edgeStyles.concernedLink.color
+            : edgeStyles.effect.color,
         },
         data: { component: component.id },
       });
@@ -212,13 +217,18 @@ function convertEffectEdges(component: ComponentNode) {
         source: effect.id,
         target: targetId,
         style: targetId.startsWith("prop")
-          ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-          : { stroke: "black", strokeWidth: innerEdgeWidth },
+          ? {
+              stroke: edgeStyles.concernedLink.color,
+              strokeWidth: innerEdgeWidth,
+            }
+          : { stroke: edgeStyles.effect.color },
         animated: targetId.startsWith("prop") ? true : false,
         zIndex: 50,
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: targetId.startsWith("prop") ? "#FF3B30" : "black",
+          color: targetId.startsWith("prop")
+            ? edgeStyles.concernedLink.color
+            : edgeStyles.effect.color,
         },
         data: { component: component.id },
       });
@@ -255,7 +265,7 @@ function convertPropEdges(
             id: `${ref}-${prop.id}`,
             source: nodeId,
             target: prop.id,
-            style: { stroke: "#A2845E" },
+            style: { stroke: edgeStyles.stateSetterProp.color },
             data: {
               refRoot: target.parentId,
               propRoot: component.id,
@@ -264,7 +274,7 @@ function convertPropEdges(
             sourceHandle: "setter",
             markerEnd: {
               type: MarkerType.ArrowClosed,
-              color: "#A2845E",
+              color: edgeStyles.stateSetterProp.color,
             },
             animated: true,
           });
@@ -282,8 +292,11 @@ function convertPropEdges(
             source: ref,
             target: prop.id,
             style: ref.startsWith("prop")
-              ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-              : { stroke: "#34C759" },
+              ? {
+                  stroke: edgeStyles.concernedLink.color,
+                  strokeWidth: innerEdgeWidth,
+                }
+              : { stroke: edgeStyles.stateValueProp.color },
             data: {
               refRoot: target.parentId,
               propRoot: component.id,
@@ -291,7 +304,9 @@ function convertPropEdges(
             zIndex: 50,
             markerEnd: {
               type: MarkerType.ArrowClosed,
-              color: ref.startsWith("prop") ? "#FF3B30" : "#34C759",
+              color: ref.startsWith("prop")
+                ? edgeStyles.concernedLink.color
+                : edgeStyles.stateValueProp.color,
             },
             animated: true,
           });
@@ -312,7 +327,10 @@ function updateComponentEdges(componentEdges: Edge[], propEdges: Edge[]) {
 
     let isDetailedEdgeExist = false;
     propEdges.forEach((propEdge) => {
-      if (propEdge.data?.refRoot === source && propEdge.data?.propRoot === target) {
+      if (
+        propEdge.data?.refRoot === source &&
+        propEdge.data?.propRoot === target
+      ) {
         isDetailedEdgeExist = true;
       }
     });
@@ -475,7 +493,9 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           ),
         ];
         setPropEdges(updatedPropEdges);
-        setComponentEdges(updateComponentEdges(componentEdges, updatedPropEdges));
+        setComponentEdges(
+          updateComponentEdges(componentEdges, updatedPropEdges)
+        );
         expandedLevels.current[node.data.level as number]++;
       } else {
         expandedLevels.current[node.data.level as number]--;
@@ -487,7 +507,9 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         setEffectNodes([...removeEffectNodes(component, effectNodes)]);
 
         setComponentNodes(shrinkComponent(node, updatedNodes));
-        setComponentEdges(updateComponentEdges(componentEdges, updatedPropEdges));
+        setComponentEdges(
+          updateComponentEdges(componentEdges, updatedPropEdges)
+        );
       }
     },
     [
@@ -749,7 +771,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             height: "100vh",
             padding: 15,
             zIndex: 100,
-            borderRight: "2px solid #ccc",
+            borderRight: "2px solid #e5e5e5",
           }}
         >
           <div
@@ -787,7 +809,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
                 }}
               >
                 <div className="legendTitle">Mark</div>
-                {legendMarkStyle.map((legend) => (
+                {Object.values(markStyles).map((legend) => (
                   <NodeLegendItem key={legend.label} {...legend} />
                 ))}
               </div>
@@ -800,7 +822,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
                 }}
               >
                 <div className="legendTitle">Edge</div>
-                {legendEdgeStyle.map((legend) => (
+                {Object.values(edgeStyles).map((legend) => (
                   <EdgeLegendItem key={legend.label} {...legend} />
                 ))}
               </div>
