@@ -1,7 +1,7 @@
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
-import "./ComponentStyle.css";
+import "./MarkStyle.css";
 
 type ComponentMarkData = Node<
   { label: string; hasState: boolean; hasProps: boolean; baseWidth: number },
@@ -18,14 +18,12 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
       : baseWidth;
   return (
     <div className="component">
-      <div className="label">{data.label}</div>
+      <div className="componentLabel">{data.label}</div>
       <div
-        className="node-content"
+        className="node-content componentNode"
         style={{
           width: width,
           height: baseWidth,
-          borderRadius: 2,
-          background: "#D9D9D9",
         }}
       />
       {data.hasProps && (
