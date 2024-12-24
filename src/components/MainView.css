@@ -65,5 +65,10 @@ div.legendTitle {
 }
 
 .unfocused {
-  opacity: 0.4;
+  opacity: 0.25;
+}
+
+.focused {
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

@@ -1,0 +1,27 @@
+{
+  "component": {
+    "label": "Component link",
+    "color": "#b1b1b7",
+    "style": "solid"
+  },
+  "effect": {
+    "label": "Effect link",
+    "color": "#32ADE6",
+    "style": "solid"
+  },
+  "stateValueProp": {
+    "label": "State value - Prop link",
+    "color": "#34C759",
+    "style": "dashed"
+  },
+  "stateSetterProp": {
+    "label": "State setter - Prop link",
+    "color": "#A2845E",
+    "style": "dashed"
+  },
+  "concernedLink": {
+    "label": "Concerned link",
+    "color": "#FF3B30",
+    "style": "dashed"
+  }
+}

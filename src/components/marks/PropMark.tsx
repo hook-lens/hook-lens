@@ -1,6 +1,8 @@
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
+import nodeStyles from "../../data/nodeStyles.json";
+
 type PropMarkData = Node<{ label: string }, "prop">;
 
 export default function PropMark({ data }: NodeProps<PropMarkData>) {
@@ -25,7 +27,7 @@ export default function PropMark({ data }: NodeProps<PropMarkData>) {
           width: width,
           height: height,
           borderRadius: 2,
-          background: "#A2845E",
+          background: nodeStyles.prop.color,
         }}
       />
 

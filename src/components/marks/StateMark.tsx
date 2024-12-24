@@ -1,5 +1,7 @@
 import { Position, Handle, type Node, type NodeProps } from "@xyflow/react";
 
+import nodeStyles from "../../data/nodeStyles.json";
+
 type StateMarkData = Node<{ label: string }, "state">;
 
 export default function StateMark({ data }: NodeProps<StateMarkData>) {
@@ -26,7 +28,7 @@ export default function StateMark({ data }: NodeProps<StateMarkData>) {
           width: width,
           height: height,
           borderRadius: 2,
-          background: "#34C759",
+          background: nodeStyles.state.color,
         }}
       />
 
