@@ -14,6 +14,7 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useReactFlow,
   useUpdateNodeInternals,
   XYPosition,
 } from "@xyflow/react";
@@ -40,6 +41,9 @@ import {
   calcNewStrokeWidth,
   findRootComponents,
 } from "../utils/MarkUtils";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { FaFileCode, FaCaretLeft } from "react-icons/fa6";
 
 import constants from "../data/constants.json";
 import nodeStyles from "../data/nodeStyles.json";
@@ -526,6 +530,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
+  const reactFlow = useReactFlow();
 
   const [componentNodes, setComponentNodes] = useState<Node[]>([]);
   const [effectNodes, setEffectNodes] = useState<Node[]>([]);
@@ -536,8 +541,15 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   const [effectEdges, setEffectEdges] = useState<Edge[]>([]);
   const [propEdges, setPropEdges] = useState<Edge[]>([]);
 
-  const expandedLevels = useRef<Record<number, number>>({});
   const [isHighlightMode, setHighlightMode] = useState(false);
+  const [isCodeDisplayed, setCodeDisplayed] = useState(false);
+  const [codeDisplayedNode, setCodeDisplayedNode] = useState<Node | null>(null);
+  const [sourceCode, setSourceCode] = useState<{
+    path: string;
+    source: string;
+  }>({ path: "Not selected", source: "" });
+
+  const expandedLevels = useRef<Record<number, number>>({});
 
   const extractor = hookExtractor.current;
   const components = extractor.componentList;
@@ -568,6 +580,159 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     propEdges && setPropEdges(propEdges);
   };
 
+  const openCodeView = useCallback(
+    (component: ComponentNode) => {
+      setSourceCode({
+        path: component.path,
+        source: extractor.getSourceCode(component) || "",
+      });
+      setCodeDisplayed(true);
+    },
+    [extractor]
+  );
+
+  const createAllMarks = useCallback(() => {
+    return {
+      componentNodes: componentNodes.map((n) => ({ ...n })),
+      stateNodes: stateNodes.map((n) => ({ ...n })),
+      propNodes: propNodes.map((n) => ({ ...n })),
+      effectNodes: effectNodes.map((n) => ({ ...n })),
+      componentEdges: componentEdges.map((e) => ({ ...e })),
+      propEdges: propEdges.map((e) => ({ ...e })),
+      effectEdges: effectEdges.map((e) => ({ ...e })),
+    };
+  }, [
+    componentNodes,
+    stateNodes,
+    propNodes,
+    effectNodes,
+    componentEdges,
+    propEdges,
+    effectEdges,
+  ]);
+
+  const onNodeClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      const marks = createAllMarks();
+      if (node.type === "component") {
+        console.info("onNodeClick - expanding", node);
+        expandSingleComponent(
+          node,
+          marks,
+          expandedLevels.current,
+          isHighlightMode
+        );
+        expandedLevels.current[node.data.level as number]++;
+
+        setCodeDisplayedNode(node);
+      } else if (node.type === "expanded") {
+        console.info("onNodeClick - collapsing", node);
+        expandedLevels.current[node.data.level as number]--;
+        collapseSingleComponent(
+          node,
+          marks,
+          expandedLevels.current,
+          isHighlightMode
+        );
+
+        if (
+          !(
+            marks.effectNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            ) ||
+            marks.propNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            ) ||
+            marks.stateNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            )
+          )
+        ) {
+          resetAllHighligtedMarks(marks);
+          setHighlightMode(false);
+        }
+      } else if (
+        node.type === "prop" ||
+        node.type === "state" ||
+        node.type === "effect"
+      ) {
+        console.info("onNodeClick - highlighting", node);
+        if (node.className?.split(" ").includes("focused")) {
+          resetAllHighligtedMarks(marks);
+          setHighlightMode(false);
+        } else {
+          setHighlight(node, marks);
+          setHighlightMode(true);
+          const parent = marks.componentNodes.find(
+            (n) => n.id === node.parentId
+          );
+          parent && setCodeDisplayedNode(parent);
+        }
+      }
+
+      setAnyMarks(marks);
+    },
+    [isHighlightMode, createAllMarks]
+  );
+
+  const onExpandedAllClicked = useCallback(() => {
+    const marks = createAllMarks();
+    marks.effectNodes.forEach((n) => (n.hidden = false));
+    marks.propNodes.forEach((n) => (n.hidden = false));
+    marks.stateNodes.forEach((n) => (n.hidden = false));
+
+    marks.componentNodes.forEach((node) => {
+      if (node.type === "component") {
+        expandComponentNode(
+          node,
+          marks.componentNodes,
+          expandedLevels.current,
+          isHighlightMode
+        );
+        expandedLevels.current[node.data.level as number]++;
+      }
+    });
+    updateComponentEdges(
+      marks.componentEdges,
+      marks.propEdges,
+      marks.componentNodes,
+      isHighlightMode
+    );
+    setAnyMarks(marks);
+  }, [isHighlightMode, createAllMarks]);
+
+  const onCollapseAllClicked = useCallback(() => {
+    const marks = createAllMarks();
+    marks.componentNodes.forEach((node) => {
+      if (node.type === "expanded") {
+        expandedLevels.current[node.data.level as number]--;
+        collapseComponentNode(
+          node,
+          marks.componentNodes,
+          expandedLevels.current
+        );
+      }
+    });
+
+    marks.effectNodes.forEach((n) => (n.hidden = true));
+    marks.propNodes.forEach((n) => (n.hidden = true));
+    marks.stateNodes.forEach((n) => (n.hidden = true));
+    marks.componentEdges.forEach((e) => (e.hidden = false));
+
+    resetAllHighligtedMarks(marks);
+    setHighlightMode(false);
+    setAnyMarks(marks);
+
+    setCodeDisplayed(false);
+  }, [createAllMarks]);
+
+  const onResetHighlightClicked = useCallback(() => {
+    const marks: Marks = createAllMarks();
+    resetAllHighligtedMarks(marks);
+    setHighlightMode(false);
+    setAnyMarks(marks);
+  }, [createAllMarks]);
+
   useEffect(() => {
     console.info("MainView Rendered", extractor);
 
@@ -584,7 +749,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: node.id,
           type: "component",
           style: { ...defaultAnimationStyle },
-          zIndex: -100,
           data: {
             label: node.name,
             level,
@@ -593,6 +757,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             hasProps: node.props.length > 0,
             component: node,
             baseWidth,
+            openCodeView,
           },
           position: { x: 0, y: 0 },
         });
@@ -671,129 +836,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       effectEdges: newEffectEdges,
       propEdges: newPropEdges,
     });
-  }, [components, extractor]);
-
-  const createAllMarks = useCallback(() => {
-    return {
-      componentNodes: componentNodes.map((n) => ({ ...n })),
-      stateNodes: stateNodes.map((n) => ({ ...n })),
-      propNodes: propNodes.map((n) => ({ ...n })),
-      effectNodes: effectNodes.map((n) => ({ ...n })),
-      componentEdges: componentEdges.map((e) => ({ ...e })),
-      propEdges: propEdges.map((e) => ({ ...e })),
-      effectEdges: effectEdges.map((e) => ({ ...e })),
-    };
-  }, [
-    componentNodes,
-    stateNodes,
-    propNodes,
-    effectNodes,
-    componentEdges,
-    propEdges,
-    effectEdges,
-  ]);
-
-  const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      const marks = createAllMarks();
-      if (node.type === "component") {
-        console.info("onNodeClick - expanding", node);
-        expandSingleComponent(
-          node,
-          marks,
-          expandedLevels.current,
-          isHighlightMode
-        );
-        expandedLevels.current[node.data.level as number]++;
-      } else if (node.type === "expanded") {
-        console.info("onNodeClick - collapsing", node);
-        expandedLevels.current[node.data.level as number]--;
-        collapseSingleComponent(
-          node,
-          marks,
-          expandedLevels.current,
-          isHighlightMode
-        );
-
-        if (marks.componentNodes.every((n) => n.type === "component")) {
-          resetAllHighligtedMarks(marks);
-          setHighlightMode(false);
-        }
-      } else if (
-        node.type === "prop" ||
-        node.type === "state" ||
-        node.type === "effect"
-      ) {
-        console.info("onNodeClick - highlighting", node);
-        if (node.className?.split(" ").includes("focused")) {
-          resetAllHighligtedMarks(marks);
-          setHighlightMode(false);
-        } else {
-          setHighlight(node, marks);
-          setHighlightMode(true);
-        }
-      }
-
-      setAnyMarks(marks);
-    },
-    [isHighlightMode, createAllMarks]
-  );
-
-  const onExpandedAllClicked = useCallback(() => {
-    const marks = createAllMarks();
-    marks.effectNodes.forEach((n) => (n.hidden = false));
-    marks.propNodes.forEach((n) => (n.hidden = false));
-    marks.stateNodes.forEach((n) => (n.hidden = false));
-
-    marks.componentNodes.forEach((node) => {
-      if (node.type === "component") {
-        expandComponentNode(
-          node,
-          marks.componentNodes,
-          expandedLevels.current,
-          isHighlightMode
-        );
-        expandedLevels.current[node.data.level as number]++;
-      }
-    });
-    updateComponentEdges(
-      marks.componentEdges,
-      marks.propEdges,
-      marks.componentNodes,
-      isHighlightMode
-    );
-    setAnyMarks(marks);
-  }, [isHighlightMode, createAllMarks]);
-
-  const onCollapseAllClicked = useCallback(() => {
-    const marks = createAllMarks();
-    marks.componentNodes.forEach((node) => {
-      if (node.type === "expanded") {
-        expandedLevels.current[node.data.level as number]--;
-        collapseComponentNode(
-          node,
-          marks.componentNodes,
-          expandedLevels.current
-        );
-      }
-    });
-
-    marks.effectNodes.forEach((n) => (n.hidden = true));
-    marks.propNodes.forEach((n) => (n.hidden = true));
-    marks.stateNodes.forEach((n) => (n.hidden = true));
-    marks.componentEdges.forEach((e) => (e.hidden = false));
-
-    resetAllHighligtedMarks(marks);
-    setHighlightMode(false);
-    setAnyMarks(marks);
-  }, [createAllMarks]);
-
-  const onResetHighlightClicked = useCallback(() => {
-    const marks: Marks = createAllMarks();
-    resetAllHighligtedMarks(marks);
-    setHighlightMode(false);
-    setAnyMarks(marks);
-  }, [createAllMarks]);
+  }, [components, extractor, openCodeView]);
 
   useEffect(() => {
     updateNodeInternals(nodes.map((n) => n.id));
@@ -806,6 +849,30 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   useEffect(() => {
     setEdges([...componentEdges, ...effectEdges, ...propEdges]);
   }, [componentEdges, effectEdges, propEdges, setEdges]);
+
+  useEffect(() => {
+    if (!codeDisplayedNode) {
+      return;
+    }
+
+    if (
+      codeDisplayedNode.type === "component" ||
+      codeDisplayedNode.type === "expanded"
+    ) {
+      const component = codeDisplayedNode.data.component as ComponentNode;
+      setSourceCode({
+        path: component.path || "Not found",
+        source: extractor.getSourceCode(component) || "",
+      });
+    }
+  }, [codeDisplayedNode, extractor]);
+
+  useEffect(() => {
+    const transformX = 600;
+    const currentViewPort = reactFlow.getViewport();
+    currentViewPort.x += isCodeDisplayed ? transformX : -transformX;
+    reactFlow.setViewport(currentViewPort);
+  }, [isCodeDisplayed, reactFlow]);
 
   return (
     <div
@@ -829,46 +896,86 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           position="top-left"
           pannable
           style={{
-            zIndex: 1000,
+            zIndex: 150,
             transform: "translate(0px, 50px)",
             boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
           }}
         />
-        <div className="panelContainer">
-          <div className="appTitle">HookLens</div>
-          <Panel
-            position="top-left"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              transform: "translate(0px, 220px)",
-            }}
-          >
-            <div className="legend">
-              <div className="legendItemContainer">
-                <div className="legendTitle">Mark</div>
-                {Object.values(nodeStyles).map((legend) => (
-                  <NodeLegendItem key={legend.label} {...legend} />
-                ))}
-              </div>
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <div className="panelContainer">
+            <div className="appTitle">HookLens</div>
+            <Panel
+              position="top-left"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                transform: "translate(0px, 220px)",
+              }}
+            >
+              <div className="legend">
+                <div className="legendItemContainer">
+                  <div className="legendTitle">Mark</div>
+                  {Object.values(nodeStyles).map((legend) => (
+                    <NodeLegendItem key={legend.label} {...legend} />
+                  ))}
+                </div>
 
-              <div className="legendItemContainer">
-                <div className="legendTitle">Edge</div>
-                {Object.values(edgeStyles).map((legend) => (
-                  <EdgeLegendItem key={legend.label} {...legend} />
-                ))}
+                <div className="legendItemContainer">
+                  <div className="legendTitle">Edge</div>
+                  {Object.values(edgeStyles).map((legend) => (
+                    <EdgeLegendItem key={legend.label} {...legend} />
+                  ))}
+                </div>
               </div>
+            </Panel>
+          </div>
+          <div
+            className={
+              isCodeDisplayed ? "codeViewContainer" : "codeViewContainer hidden"
+            }
+          >
+            <div className="codeViewPath">
+              <FaFileCode
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  textShadow: "0 1px 4px rgba(0, 0, 0, 0.6)",
+                }}
+              />
+              <div>{sourceCode.path}</div>
             </div>
-            <button className="control" onClick={onExpandedAllClicked}>
-              Expand all
-            </button>
-            <button className="control" onClick={onCollapseAllClicked}>
-              Collapse all
-            </button>
-            <button className="control" onClick={onResetHighlightClicked}>
-              Reset highlight
-            </button>
-          </Panel>
+            <SyntaxHighlighter
+              style={atomOneDark}
+              language="javascript"
+              showLineNumbers={true}
+              customStyle={{
+                fontSize: 14,
+                textAlign: "left",
+                margin: "0px",
+                height: "100%",
+              }}
+            >
+              {sourceCode.source}
+            </SyntaxHighlighter>
+
+            <div className="controlContainer">
+              <button
+                className="codeViewHandle"
+                onClick={() => setCodeDisplayed(!isCodeDisplayed)}
+              >
+                {isCodeDisplayed ? <FaCaretLeft /> : <FaFileCode />}
+              </button>
+              <button className="control" onClick={onExpandedAllClicked}>
+                Expand all
+              </button>
+              <button className="control" onClick={onCollapseAllClicked}>
+                Collapse all
+              </button>
+              <button className="control" onClick={onResetHighlightClicked}>
+                Reset highlight
+              </button>
+            </div>
+          </div>
         </div>
       </ReactFlow>
     </div>

@@ -16,7 +16,6 @@ export function createPropNodes(component: ComponentNode) {
     hidden: true,
     type: "prop",
     parentId: component.id,
-    zIndex: -100,
     className: "",
     style: { ...defaultAnimationStyle },
     data: { label: prop.name },
@@ -33,7 +32,6 @@ export function createStateNodes(component: ComponentNode) {
     hidden: true,
     type: "state",
     parentId: component.id,
-    zIndex: -100,
     className: "",
     style: { ...defaultAnimationStyle },
     data: { label: state.name },
@@ -50,7 +48,6 @@ export function createEffectNodes(component: ComponentNode) {
     hidden: true,
     type: "effect",
     parentId: component.id,
-    zIndex: -100,
     className: "",
     style: { ...defaultAnimationStyle },
     sourcePosition: Position.Right,
@@ -93,6 +90,7 @@ export function createEffectEdges(component: ComponentNode) {
             : edgeStyles.effect.color,
         },
         data: { component: component.id },
+        selectable: false,
       });
     });
 
@@ -122,6 +120,7 @@ export function createEffectEdges(component: ComponentNode) {
             : edgeStyles.effect.color,
         },
         data: { component: component.id },
+        selectable: false,
       });
     });
   });
@@ -173,6 +172,7 @@ export function createPropEdges(
               color: edgeStyles.stateSetterProp.color,
             },
             animated: true,
+            selectable: false,
           });
         } else {
           const target =
@@ -211,6 +211,7 @@ export function createPropEdges(
                 : edgeStyles.stateValueProp.color,
             },
             animated: true,
+            selectable: false,
           });
         }
       });

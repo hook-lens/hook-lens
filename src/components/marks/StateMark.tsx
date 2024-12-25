@@ -50,7 +50,6 @@ export default function StateMark({ data }: NodeProps<StateMarkData>) {
       <div
         style={{
           width: 25,
-          zIndex: 100,
           fontSize: 9,
           fontWeight: "bold",
           position: "absolute",

@@ -207,14 +207,19 @@ export default class HookExtractor {
   readonly stateList: StateNode[];
   readonly propList: PropNode[];
   readonly effectList: EffectNode[];
-  readonly asts: { source: string; ast: acorn.Node; defaultModule: string }[];
+  readonly fileList: {
+    filePath: string;
+    source: string;
+    ast: acorn.Node;
+    defaultModule: string;
+  }[];
 
   constructor() {
     this.componentList = [];
     this.stateList = [];
     this.propList = [];
     this.effectList = [];
-    this.asts = [];
+    this.fileList = [];
   }
 
   public setProject(files: { source: string; content: string }[]) {
@@ -229,13 +234,13 @@ export default class HookExtractor {
     this.linkEffects();
   }
 
-  private extractComponents(source: string, content: string) {
-    console.info("extractComponents", source);
+  private extractComponents(filePath: string, content: string) {
+    console.info("extractComponents", filePath);
 
     const ast = this.parseJsFile(content);
     const defaultModule = this.extractDefaultModule(ast);
     console.log("extractComponents - ast", ast);
-    this.asts.push({ source, ast, defaultModule });
+    this.fileList.push({ filePath, source: content, ast, defaultModule });
 
     extend(walk.base);
     walk.fullAncestor<ComponentNode[]>(ast, (node, state, ancestor) => {
@@ -252,7 +257,7 @@ export default class HookExtractor {
         return;
       }
 
-      this.newComponentNode(name, source, ast, node);
+      this.newComponentNode(name, filePath, ast, node);
     });
 
     console.info("extractComponents - All components", this.componentList);
@@ -465,11 +470,11 @@ export default class HookExtractor {
       "getDefaultModule",
       relativePath,
       modifiedPath,
-      this.asts.find((ast) => ast.source.startsWith(modifiedPath))
+      this.fileList.find((ast) => ast.filePath.startsWith(modifiedPath))
     );
 
     return (
-      this.asts.find((ast) => ast.source.startsWith(modifiedPath))
+      this.fileList.find((ast) => ast.filePath.startsWith(modifiedPath))
         ?.defaultModule || ""
     );
   }
@@ -716,6 +721,10 @@ export default class HookExtractor {
 
   public getEffectByName(name: string) {
     return this.effectList.find((effect) => effect.name === name);
+  }
+
+  public getSourceCode(component: ComponentNode) {
+    return this.fileList.find((file) => file.filePath === component.path)?.source;
   }
 
   public toJson() {
