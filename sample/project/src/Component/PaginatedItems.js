@@ -19,12 +19,14 @@ function PaginatedItems(props) {
   const setCurrentAlcoholList = props.setCurrentAlcoholList;
   const itemOffset = props.itemOffset;
   const setItemOffset = props.setItemOffset;
+  const category = props.category;
 
   useEffect(() => {
     const endOffset = itemOffset + itemsPerPage;
     setCurrentAlcoholList(alcoholList.slice(itemOffset, endOffset));
     setPageCount(Math.ceil(alcoholList.length / itemsPerPage));
-  }, [itemOffset, itemsPerPage]);
+    category === "all" && scrollToRef.current.scrollIntoView();
+  }, [itemOffset, itemsPerPage, category]);
   const handlePageClick = (event) => {
     const newOffset = (event.selected * itemsPerPage) % alcoholList.length;
     setItemOffset(newOffset);
@@ -33,7 +35,7 @@ function PaginatedItems(props) {
   return (
     <>
       <div ref={scrollToRef} className="liquor-card-wrapper">
-        <Items currentItems={currentAlcoholList} />
+        <Items currentItems={currentAlcoholList} itemOffset={itemOffset}/>
       </div>
       <div className="footer">
         <ReactPaginate

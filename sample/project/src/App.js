@@ -35,7 +35,6 @@ function App() {
               path="/liquor/:id"
               element={
                 <Liquor
-                  dummyAlcoholList={dummyAlcoholList}
                   filteredAlcoholList={filteredAlcoholList}
                   setFilteredAlcoholList={setFilteredAlcoholList}
                   filteredItemOffset={filteredItemOffset}

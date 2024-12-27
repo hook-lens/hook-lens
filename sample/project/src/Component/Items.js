@@ -5,7 +5,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { useRecoilValue } from "recoil";
 import { alcoholListState } from "../Store/selector";
 
-function Items({ currentItems }) {
+function Items({ currentItems, itemOffset }) {
   const alcoholList = useRecoilValue(alcoholListState);
   const onClickItem = (idx, num) => {
     if (localStorage.getItem("liquors") === null) {
@@ -42,7 +42,7 @@ function Items({ currentItems }) {
                 src={alcohol.imageUrl}
               />
               <span style={{ fontWeight: "bold" }}>
-                {alcohol.name} | {alcohol.price}원 <br></br>
+                No. {itemOffset}: {alcohol.name} | {alcohol.price}원 <br></br>
               </span>
             </div>
           </RouterLink>
