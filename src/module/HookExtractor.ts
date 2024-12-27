@@ -511,7 +511,7 @@ export default class HookExtractor {
         let targetProp = component.getPropByName(name);
         if (!targetProp) {
           console.log("extractAttribute - new prop", component, attribute);
-          targetProp = new PropNode(name, component);
+          targetProp = this.newPropNode(component, name);
           component.props.push(targetProp);
         }
 
