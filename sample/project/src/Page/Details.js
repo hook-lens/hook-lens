@@ -46,6 +46,14 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
   }, [user, loading]);
 
   useEffect(() => {
+    if (dummyAlcoholList.length > 0) {
+      currentAlcohol = dummyAlcoholList.filter(
+        (_alcohol) => _alcohol.id === params.id
+      )[0];
+    }
+  }, [dummyAlcoholList])
+
+  useEffect(() => {
     top.current.focus();
     setCurrentAlcoholId(currentAlcohol.id);
   });

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import "./App.css";
 import HookExtractor from "./module/HookExtractor";
-import System from "./components/System";
+// import System from "./components/System";
 import FlowView from "./components/FlowView";
 
 import { DataProps } from "./types/data";
@@ -50,9 +50,9 @@ function App() {
       }
 
       Promise.all(promises).then((results) => {
-        const extractor = hookExtractor.current
+        const extractor = hookExtractor.current;
         extractor.setProject(results);
-        extractor.print();
+        // extractor.print();
         // console.log(extractor.toJson());
         const data = extractor.toJson();
         setData(JSON.parse(data) as DataProps);
@@ -81,7 +81,7 @@ function App() {
       ) : (
         <div className="Upload">
           <h1>HookLens</h1>
-          <label htmlFor="file-input">Select Files</label>
+          <label htmlFor="file-input">Select File/Directory</label>
           <input
             type="file"
             id="file-input"
@@ -92,7 +92,7 @@ function App() {
             onClick={() => setIsVisualizationPage(true)}
             disabled={!isVisualizationEnabled}
           >
-            Go to Visualization
+            Go To Visualization
           </button>
         </div>
       )}

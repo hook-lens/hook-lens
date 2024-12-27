@@ -53,7 +53,11 @@ const Home = (props) => {
       const liquors = document.querySelector("#liquor-card-wrapper-text");
       liquors.scrollIntoView();
     }
-  }, [props.category]);
+
+    if (props.itemOffset > 0) {
+      console.info("scrolling to top");
+    }
+  }, [props.category, props.itemOffset]);
 
   return (
     <div style={{ height: "100vh" }}>
