@@ -9,10 +9,35 @@
 2. **Dependency Management for useEffect**: Dependency Array의 변수 추적 및 관리 어려움
 
 ### Experiment Environment
-- Base : VSCode + React Dev Tool
-- Test : VSCode + React Dev Tool + HookLens
+- Base : VSCode
+- Test : VSCode + HookLens
 
-### Project Structure
+#### Base Environment
+```
+git clone https://github.com/Suyeon-Stom-Hwang/HookLens.git
+```
+
+- /HookLens/sample/project 내에 실험용 프로젝트가 있습니다.
+
+#### Test Environment
+```
+// Project Clone
+cd HookLens
+yarn install
+yarn start
+```
+![image](../public/hooklens.png)
+
+1. ***Select Files***를 클릭하고 project 폴더를 선택하세요.
+2. ***Go to Visualization*** 버튼이 활성화되면 클릭하세요.
+
+![image](../public/overview.png)
+
+3. ***Node***를 클릭하면 해당 Component의 상세 정보를 확인할 수 있습니다.
+
+![image](../public/detail.png)
+
+### Example Project Structure
 ```
 project
 ├── README.md
@@ -49,7 +74,7 @@ project
 - props가 필요한 자식 컴포넌트가 있더라도 중간 계층 컴포넌트에서 props를 내려보내기만 하고, 해당 데이터를 직접적으로 사용하지 않는 경우도 해당
 
 #### 2️⃣ **측정 항목**
-- 제한된 시간(10분) 내에 찾은 해당 props의 개수
+- 제시된 props가 Prop Drilling에 해당하는지 판단하는 시간 측정
 
 #### 3️⃣ **예시**
 
@@ -59,58 +84,72 @@ const Parent = () => {
     const prop1 = 'prop1';
     const prop2 = 'prop2';
     const prop3 = 'prop3';
+
     return <Child1 prop1={prop1} prop2={prop2} prop3={prop3} />;
 }
 
 // Child1 Component
 const Child1 = ({ prop1, prop2, prop3 }) => {
-    return <Child2 prop1={prop1} prop2={prop2} />;
+
+    const handleClick = () => {
+        console.log(prop1);
+    }
+
+    return <Child2 prop2={prop2} prop3={prop3}
+    onClick={handleClick} />;
+    />;
 }
 
 // Child2 Component
-const Child2 = ({ prop1, prop2 }) => {
-    return <Child3 prop1={prop1} />;
+const Child2 = ({ prop2, prop3 }) => {
+    return <Child3 prop2={prop2} />;
 }
 
 // Child3 Component
-const Child3 = ({ prop1 }) => {
-    return <div>{prop1}</div>;
+const Child3 = ({ prop2 }) => {
+    return <div>{prop2}</div>;
 }
 ```
 - **문제**
-    - 위의 코드에서 Prop Drilling에 해당하는 props 찾기
+    - 위의 코드에서 prop1, prop2, prop3가 Prop Drilling에 해당하는지 판단
 
 - **정답**
-    - `prop1`, `prop2`, `prop3`
+    - `prop1`
+        - No
+    - `prop2`
+        - Yes
+    - `prop3`
+        - Yes
 
 - **Prop Drilling**
-     - `prop1`: 3번 (Parent → Child1 → Child2 → Child3)
-     - `prop2`: 2번 (Parent → Child1 → Child2)
-     - `prop3`: 1번 (Parent → Child1)
-
-- **사용 여부**
-   - 최종적으로 사용된 prop: `prop1` (Child3 컴포넌트에서 사용)
-   - 사용되지 않은 props: `prop2`, `prop3`는 자식 계층에서 전혀 사용되지 않음
+     - `prop2`
+        - 3번 (Parent → Child1 → Child2 → Child3)
+        - Child3 컴포넌트에서 사용
+     - `prop3`
+        - 2번 (Parent → Child1 -> Child2)
+        - 사용되지 않음
 
 #### 3️⃣ **난이도 설정**
-Prop Drilling의 복잡성을 세 가지 난이도로 구분하여 실험합니다:
+Prop Drilling의 복잡성을 세 가지 난이도로 구분하여 실험
 
 1. **상 (High)**  
-   - 자식 컴포넌트에서 모든 prop을 `props.propName` 형태로 직접 사용
-   - 중간 컴포넌트의 수가 많고, Prop Drilling의 깊이가 4 이상인 경우
+   - Prop Drilling의 깊이가 4 이상인 경우
 
 2. **중 (Medium)**  
-   - 자식 컴포넌트에서 prop을 구조 분해 할당 후 사용
-   - Prop Drilling의 깊이는 3 이하
+   - Prop Drilling의 깊이는 3인 경우
 
 3. **하 (Low)**  
    - 중간 컴포넌트 없이 부모 -> 자식으로 직접 props 전달 
 
 
 ### 📝 ***Problem***
-- Example Project에서 Prop Drilling에 해당하는 props를 ***10분*** 내에 모두 찾으세요.
-- App.js 파일에서 시작하여 하위 컴포넌트로 이동하면서 props를 확인하세요.
-- 찾은 props의 이름을 적어주세요.
+- 제시된 환경에서 주어진 state가 Prop Drilling 패턴으로 전달되는 경우인지 판단하세요.
+
+1. ***Base***
+- App.js 내의 `pageCount`,`filteredItemsId`, `currentAlcoholList`, `dummyAlcoholList` state가 Prop Drilling 패턴으로 전달되는지 판단하고 걸린 시간을 측정하세요.
+
+2. ***Test***
+- App.js 내의 `category`,`itemOffset`, `setFilteredAlcoholList`, `filteredItemOffset` state가 Prop Drilling 패턴으로 전달되는지 판단하고 걸린 시간을 하세요.
 
 ### Task 2. Identifying Components Affected by State-Triggered *useEffect()*
 
@@ -125,13 +164,10 @@ Prop Drilling의 복잡성을 세 가지 난이도로 구분하여 실험합니�
 #### 3️⃣ **예시**
 
 ```jsx
-const ComponentA = () => {
-  const [stateA, setStateA] = useState(0);
-  const [stateB, setStateB] = useState(0);
-
+const ComponentA = ({ stateA, setStateA, stateB, setStateB }) => {
   useEffect(() => {
     console.log("useEffect triggered by stateA");
-    setStateB((prev) => prev + 1); // stateB 변경
+    setStateB((prev) => prev + 1);
   }, [stateA]);
 
   return (
@@ -152,16 +188,24 @@ const ComponentB = ({ stateB }) => {
 };
 
 const App = () => {
+  const [stateA, setStateA] = useState(0);
   const [stateB, setStateB] = useState(0);
 
   return (
     <div>
-      <ComponentA />
+      <ComponentA
+        stateA={stateA}
+        setStateA={setStateA}
+        stateB={stateB}
+        setStateB={setStateB}
+      />
       <ComponentB stateB={stateB} />
     </div>
   );
 };
+
 ```
+
 - **문제**
     - `ComponentA`에서 `stateA`가 변경
 
@@ -175,10 +219,15 @@ const App = () => {
 
 
 ### 📝 ***Problem***
-- Liquor.js의 filteredItemsId state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
+- 제시된 환경에서 주어진 state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
+
+1. ***Base***
+- Liquor.js의 `filteredItemsId` state가 변경되었을 때
+
+2. ***Test***
+- PaginatedItems.js의 `dummyQuizList` state가 변경되었을 때
 
 ## Task 1. 정답
-
 ### App.js → Home.js → PaginatedItems → Items.js
 
 - **pageCount 中**
@@ -223,6 +272,7 @@ const App = () => {
 - **setDummyAlcoholList 下**
     - App.js -> Details.js
     - 사용되지 않음
+
 
 ## Task 2. 정답
 ### App.js → Liquor.js → FilteredPaginatedItems.js → FilteredItems.js

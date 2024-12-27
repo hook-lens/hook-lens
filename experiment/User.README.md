@@ -9,8 +9,8 @@
 2. **Dependency Management for useEffect**: Dependency Array의 변수 추적 및 관리 어려움
 
 ### Experiment Environment
-- Base : VSCode + React Dev Tool
-- Test : VSCode + React Dev Tool + HookLens
+- Base : VSCode
+- Test : VSCode + HookLens
 
 #### Base Environment
 ```
@@ -30,8 +30,12 @@ yarn start
 
 1. ***Select Files***를 클릭하고 project 폴더를 선택하세요.
 2. ***Go to Visualization*** 버튼이 활성화되면 클릭하세요.
+
 ![image](../public/overview.png)
+
 3. ***Node***를 클릭하면 해당 Component의 상세 정보를 확인할 수 있습니다.
+
+![image](../public/detail.png)
 
 ### Example Project Structure
 ```
@@ -70,7 +74,7 @@ project
 - props가 필요한 자식 컴포넌트가 있더라도 중간 계층 컴포넌트에서 props를 내려보내기만 하고, 해당 데이터를 직접적으로 사용하지 않는 경우도 해당
 
 #### 2️⃣ **측정 항목**
-- 제한된 시간(10분) 내에 찾은 해당 props의 개수
+- 제시된 props가 Prop Drilling에 해당하는지 판단하는 시간 측정
 
 #### 3️⃣ **예시**
 
@@ -148,13 +152,10 @@ const Child3 = ({ prop2 }) => {
 #### 3️⃣ **예시**
 
 ```jsx
-const ComponentA = () => {
-  const [stateA, setStateA] = useState(0);
-  const [stateB, setStateB] = useState(0);
-
+const ComponentA = ({ stateA, setStateA, stateB, setStateB }) => {
   useEffect(() => {
     console.log("useEffect triggered by stateA");
-    setStateB((prev) => prev + 1); // stateB 변경
+    setStateB((prev) => prev + 1);
   }, [stateA]);
 
   return (
@@ -175,16 +176,24 @@ const ComponentB = ({ stateB }) => {
 };
 
 const App = () => {
+  const [stateA, setStateA] = useState(0);
   const [stateB, setStateB] = useState(0);
 
   return (
     <div>
-      <ComponentA />
+      <ComponentA
+        stateA={stateA}
+        setStateA={setStateA}
+        stateB={stateB}
+        setStateB={setStateB}
+      />
       <ComponentB stateB={stateB} />
     </div>
   );
 };
+
 ```
+
 - **문제**
     - `ComponentA`에서 `stateA`가 변경
 
@@ -196,10 +205,6 @@ const App = () => {
     - `ComponentA`의 *useEffect()* 내에서 `stateB` 변경
     - `ComponentB`에서 `stateB` 변경 감지 후 *useEffect()* 실행
 
-### 📝 ***Problem***
-- Liquor.js의 `filteredItemsId` state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
-- Base와 Test 환경에서 각각 한 번씩 진행해주세요.
-
 
 ### 📝 ***Problem***
 - 제시된 환경에서 주어진 state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
@@ -208,4 +213,4 @@ const App = () => {
 - Liquor.js의 `filteredItemsId` state가 변경되었을 때
 
 2. ***Test***
-- PaginatedItems.js의 `itemOffset` state가 변경되었을 때
+- PaginatedItems.js의 `dummyQuizList` state가 변경되었을 때
