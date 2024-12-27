@@ -1,6 +1,6 @@
-## Task 1. 정답
+## Task 1.
 
-### Prop Drilling O
+#### - Prop Drilling O
 
 - **currentAlcoholList 上**
     - App.js -> Home.js -> PaginatedItems.js -> Items.js
@@ -14,20 +14,27 @@
     - App.js -> Liquor.js
     - 사용되지 않음
 
-### Prop Drilling X
+#### - Prop Drilling X
+
 - **category 上**
     - App.js -> Home.js -> PaginatedItems.js
-    - Home.js에서 사용
+    - Home.js과 PaginatedItems.js에서 모두 사용
 
 - **itemOffset 中**
+    - App.js -> Home.js -> PaginatedItems.js
+    - Home.js와 PaginatedItems.js에서 모두 사용
 
 - **dummyAlcoholList 下**
     - App.js -> Details.js
-    - 사용되지 않음
+    - Details.js에서 사용
 
 
+## Task 2.
 
-## Task 2. 정답
-### App.js → Liquor.js → FilteredPaginatedItems.js → FilteredItems.js
+- **filteredItemsId**
+    - **App.js**, **Liquor.js**, **FilteredPaginatedItems.js**, **FilteredItems.js**
+    - filteredItemsId(App.js) → useEffect(Liquor.js) → setFilteredAlcoholList → alcoholList -> useEffect(FilteredPaginatedItems.js) → currentFilteredAlcoholList(FilteredItems.js)
 
-- filteredItemsId → effect_10(Liquor.js) → filteredAlcoholList → effect_4(FilteredPaginatedItems.js) → currentAlcoholList(FilteredItems.js)
+- **dummyQuizList**
+    - **App.js**, **Quiz.js**, **RecommendItems.js**, **KakaoRecommendButton.js**
+    - dummyQuizList(App.js) → useEffect(Quiz.js) → recommendedAlcohols -> alcohols -> useEffect(RecommendItems.js) → recommended(KakaoRecommendButton.js)

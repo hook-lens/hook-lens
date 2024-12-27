@@ -210,7 +210,7 @@ const App = () => {
 - 제시된 환경에서 주어진 state가 변경되었을 때 영향을 받는 Component를 모두 찾고 시간을 측정하세요.
 
 1. ***Base***
-- Liquor.js의 `filteredItemsId` state가 변경되었을 때
+- App.js의 `filteredItemsId` state가 변경되었을 때
 
 2. ***Test***
-- PaginatedItems.js의 `dummyQuizList` state가 변경되었을 때
+- App.js의 `dummyQuizList` state가 변경되었을 때
