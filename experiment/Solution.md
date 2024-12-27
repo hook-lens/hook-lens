@@ -1,6 +1,6 @@
 ## Task 1. 정답
 
-### Prop Drilling
+### Prop Drilling O
 
 - **currentAlcoholList 上**
     - App.js -> Home.js -> PaginatedItems.js -> Items.js
@@ -14,7 +14,12 @@
     - App.js -> Liquor.js
     - 사용되지 않음
 
-### App.js → Details.js → KakaoRecommendButton.js
+### Prop Drilling X
+- **category 上**
+    - App.js -> Home.js -> PaginatedItems.js
+    - Home.js에서 사용
+
+- **itemOffset 中**
 
 - **dummyAlcoholList 下**
     - App.js -> Details.js
