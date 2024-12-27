@@ -493,8 +493,29 @@ export default class HookExtractor {
         if (!child) return;
 
         console.log("linkComponents", component, child, openingElement);
-        this.extractAttributes(child, openingElement.attributes, component);
         component.children.push(child);
+      });
+    });
+
+    this.componentList.sort(
+      (a, b) => this.countDecendent(b) - this.countDecendent(a)
+    );
+    
+    console.log("linkComponents - sorted", this.componentList);
+
+    this.componentList.forEach((component) => {
+      walk.full(component.node, (node) => {
+        if (node.type !== "JSXElement") {
+          return;
+        }
+
+        const openingElement = (node as any).openingElement;
+        const child = this.getComponentByName(openingElement.name.name);
+
+        if (!child) return;
+
+        console.log("linkComponents", component, child, openingElement);
+        this.extractAttributes(child, openingElement.attributes, component);
       });
     });
   }
@@ -724,7 +745,8 @@ export default class HookExtractor {
   }
 
   public getSourceCode(component: ComponentNode) {
-    return this.fileList.find((file) => file.filePath === component.path)?.source;
+    return this.fileList.find((file) => file.filePath === component.path)
+      ?.source;
   }
 
   public toJson() {
