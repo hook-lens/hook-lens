@@ -11,10 +11,10 @@ import {
   MiniMap,
   Node,
   Panel,
-  Position,
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useReactFlow,
   useUpdateNodeInternals,
   XYPosition,
 } from "@xyflow/react";
@@ -26,11 +26,43 @@ import ExpandedComponentMark from "./marks/ExpandedComponentMark";
 import EffectMark from "./marks/EffectMark";
 import PropMark from "./marks/PropMark";
 import StateMark from "./marks/StateMark";
+import NodeLegendItem from "./NodeLegendItem";
+import EdgeLegendItem from "./EdgeLegendItem";
+import {
+  createEffectEdges,
+  createPropEdges,
+  createPropNodes,
+  createStateNodes,
+  createEffectNodes,
+} from "../utils/MarkBuilder";
+import {
+  calcExpandedHeight,
+  calcNewPosition,
+  calcNewStrokeWidth,
+  findRootComponents,
+} from "../utils/MarkUtils";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { FaFileCode, FaCaretLeft } from "react-icons/fa6";
+
+import constants from "../data/constants.json";
+import nodeStyles from "../data/nodeStyles.json";
+import edgeStyles from "../data/edgeStyles.json";
 
 import "./MainView.css";
 
 export interface MainViewProps {
   hookExtractor: MutableRefObject<HookExtractor>;
+}
+
+interface Marks {
+  componentNodes: Node[];
+  effectNodes: Node[];
+  propNodes: Node[];
+  stateNodes: Node[];
+  componentEdges: Edge[];
+  effectEdges: Edge[];
+  propEdges: Edge[];
 }
 
 interface MarkSize {
@@ -46,265 +78,459 @@ const nodeTypes = {
   state: StateMark,
 };
 
-const topMargin = 25;
-const baseWidth = 25;
-const baseExpadnedWidth = 325;
-const innerMarkGap = 45;
-const innerEdgeWidth = 1.5;
+const baseWidth = constants.baseWidth;
+const baseExpadnedWidth = constants.baseExpadnedWidth;
+const defaultAnimationStyle = constants.defaultAnimationStyle;
 
-const defaultAnimationStyle = {
-  transition: `width 100ms, height 100ms, transform 100ms`,
-};
+function expandComponentNode(
+  targetNode: Node,
+  componentNodes: Node[],
+  expandedLevels: Record<number, number>,
+  isHighlightMode?: boolean
+) {
+  const component = targetNode.data.component as ComponentNode;
+  const expandedHeight = calcExpandedHeight(component);
 
-const legendMarkStyle = [
-  {
-    label: "Component",
-    color: "#D9D9D9",
-  },
-  {
-    label: "Prop",
-    color: "#A2845E",
-  },
-  {
-    label: "State / Setter",
-    color: "#34C759",
-  },
-  {
-    label: "Effect",
-    color: "#32ADE6",
-  },
-];
+  componentNodes.forEach((node) => {
+    if (node.id === targetNode.id) {
+      node.type = "expanded";
+      node.data.size = {
+        width: baseExpadnedWidth,
+        height: expandedHeight,
+      };
+      node.position = calcNewPosition(node);
+      return;
+    }
 
-const legendEdgeStyle = [
-  {
-    label: "Component link",
-    color: "#b1b1b7",
-    style: "solid",
-  },
-  {
-    label: "Effect link",
-    color: "#000000",
-    style: "solid",
-  },
-  {
-    label: "State value - Prop link",
-    color: "#34C759",
-    style: "dashed",
-  },
-  {
-    label: "State setter - Prop link",
-    color: "#A2845E",
-    style: "dashed",
-  },
-  {
-    label: "Concerned link",
-    color: "#FF3B30",
-    style: "dashed",
-  },
-];
+    if (isHighlightMode) {
+      node.className = "unfocused";
+    }
 
-function findRoots(
-  components: ComponentNode[],
-  extractor: HookExtractor
-): ComponentNode[] {
-  const visited: string[] = [];
-  const roots: ComponentNode[] = [];
+    if (
+      expandedLevels[targetNode.data.level as number] === 0 &&
+      (node.data.level as number) > (targetNode.data.level as number)
+    ) {
+      (node.data.translatedPosition as XYPosition).x +=
+        baseExpadnedWidth - baseWidth;
+    }
 
-  components.forEach((component) => {
-    if (visited.includes(component.id)) return;
-    extractor.visitDecendent(component, (child) => {
-      visited.push(child.id);
-    });
+    if (
+      node.data.level === targetNode.data.level &&
+      (node.data.index as number) > (targetNode.data.index as number)
+    ) {
+      (node.data.translatedPosition as XYPosition).y +=
+        (targetNode.data.size as MarkSize).height - baseWidth;
+    }
+
+    node.position = calcNewPosition(node);
   });
+}
 
-  components.forEach((component) => {
-    if (!visited.includes(component.id)) {
-      roots.push(component);
+function collapseComponentNode(
+  targetNode: Node,
+  componentNodes: Node[],
+  expandedLevels: Record<number, number>
+) {
+  componentNodes.forEach((node) => {
+    if (node.id === targetNode.id) {
+      node.type = "component";
+      node.position = calcNewPosition(node);
+      return;
+    }
+
+    if (
+      expandedLevels[targetNode.data.level as number] === 0 &&
+      (node.data.level as number) > (targetNode.data.level as number)
+    ) {
+      (node.data.translatedPosition as XYPosition).x -=
+        baseExpadnedWidth - baseWidth;
+    }
+
+    if (
+      node.data.level === targetNode.data.level &&
+      (node.data.index as number) > (targetNode.data.index as number)
+    ) {
+      (node.data.translatedPosition as XYPosition).y -=
+        (targetNode.data.size as MarkSize).height - baseWidth;
+    }
+
+    node.position = calcNewPosition(node);
+  });
+}
+
+function updateComponentEdges(
+  componentEdges: Edge[],
+  propEdges: Edge[],
+  componentNodes: Node[],
+  isHighlightMode?: boolean
+) {
+  console.info("updateComponentEdges", componentEdges, propEdges);
+  componentEdges.forEach((edge) => {
+    const source = edge.source;
+    const target = edge.target;
+
+    const sourceComponent = componentNodes.find((node) => node.id === source);
+    const targetComponent = componentNodes.find((node) => node.id === target);
+    if (!sourceComponent || !targetComponent) {
+      return;
+    }
+
+    const detailedComponentEdges = propEdges.filter(
+      (propEdge) =>
+        propEdge.data?.refRoot === source && propEdge.data?.propRoot === target
+    );
+
+    if (
+      sourceComponent.type === "expanded" &&
+      targetComponent.type === "expanded" &&
+      detailedComponentEdges.length > 0
+    ) {
+      edge.hidden = true;
+    } else {
+      edge.hidden = false;
+    }
+
+    if (isHighlightMode) {
+      edge.className = detailedComponentEdges.some((e) =>
+        e.className?.split(" ").includes("focused")
+      )
+        ? "focused"
+        : "unfocused";
+    } else {
+      edge.className = "";
+    }
+    edge.style = {
+      ...edge.style,
+      strokeWidth: calcNewStrokeWidth(edge),
+    };
+  });
+}
+
+function collectHighlightedNodes(propNodes: Node[], stateNodes: Node[]) {
+  const highlightedNodeIds: string[] = [];
+
+  propNodes.forEach((n) => {
+    if (n.className?.split(" ").includes("focused")) {
+      console.log("collectHighlightedNodes", n.className);
+      highlightedNodeIds.push(n.id);
     }
   });
 
-  return roots;
-}
-
-function calcNewPosition(node: Node) {
-  const initialPosition = node.data.initialPosition as XYPosition;
-  const translatedPosition = node.data.translatedPosition as XYPosition;
-  return {
-    x: initialPosition.x + translatedPosition.x,
-    y: initialPosition.y + translatedPosition.y,
-  };
-}
-
-function convertPropNodes(component: ComponentNode) {
-  return component.props.map((prop, i) => ({
-    id: prop.id,
-    type: "prop",
-    parentId: component.id,
-    zIndex: -100,
-    style: { ...defaultAnimationStyle },
-    data: { label: prop.name },
-    position: {
-      x: 0,
-      y: topMargin + i * innerMarkGap,
-    },
-  }));
-}
-
-function convertStateNodes(component: ComponentNode) {
-  return component.states.map((state, i) => ({
-    id: state.id,
-    type: "state",
-    parentId: component.id,
-    zIndex: -100,
-    style: { ...defaultAnimationStyle },
-    data: { label: state.name },
-    position: {
-      x: 300,
-      y: topMargin + i * innerMarkGap,
-    },
-  }));
-}
-
-function convertEffectNodes(component: ComponentNode) {
-  return component.effects.map((effect, i) => ({
-    id: effect.id,
-    type: "effect",
-    parentId: component.id,
-    zIndex: -100,
-    style: { ...defaultAnimationStyle },
-    sourcePosition: Position.Right,
-    data: {
-      label: effect.id,
-    },
-    position: {
-      x: 125,
-      y: topMargin + innerMarkGap * i,
-    },
-  }));
-}
-
-function convertEffectEdges(component: ComponentNode) {
-  const edges: Edge[] = [];
-  component.effects.forEach((effect) => {
-    effect.dependencyIds.forEach((depId) => {
-      edges.push({
-        id: `${effect.id}-${depId}`,
-        source: depId,
-        target: effect.id,
-        style: depId.startsWith("state")
-          ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-          : { stroke: "black", strokeWidth: innerEdgeWidth },
-        animated: depId.startsWith("state") ? true : false,
-        zIndex: 50,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: depId.startsWith("state") ? "#FF3B30" : "black",
-        },
-        data: { component: component.id },
-      });
-    });
-
-    effect.handlingTargetIds.forEach((targetId) => {
-      edges.push({
-        id: `${effect.id}-${targetId}`,
-        source: effect.id,
-        target: targetId,
-        style: targetId.startsWith("prop")
-          ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-          : { stroke: "black", strokeWidth: innerEdgeWidth },
-        animated: targetId.startsWith("prop") ? true : false,
-        zIndex: 50,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: targetId.startsWith("prop") ? "#FF3B30" : "black",
-        },
-        data: { component: component.id },
-      });
-    });
+  stateNodes.forEach((n) => {
+    if (n.className?.split(" ").includes("focused")) {
+      console.log("collectHighlightedNodes", n.className);
+      highlightedNodeIds.push(n.id);
+    }
   });
-  return edges;
+
+  return highlightedNodeIds;
 }
 
-function convertPropEdges(
-  nodes: Node[],
-  currentPropEdges: Edge[],
-  currentStateNodes: Node[],
-  currentPropNodes: Node[]
+function updateHighlightedComponentNodes(
+  componentNodes: Node[],
+  propNodes: Node[],
+  stateNodes: Node[],
+  effectNodes: Node[]
 ) {
-  const newPropEdges: Edge[] = [];
-  nodes.forEach((node) => {
-    if (node.type !== "expanded" || !node.data.component) return;
+  componentNodes.forEach((n) => {
+    const childProps = propNodes.filter((p) => p.parentId === n.id);
+    const childStates = stateNodes.filter((s) => s.parentId === n.id);
+    const childEffects = effectNodes.filter((e) => e.parentId === n.id);
 
-    const component = node.data.component as ComponentNode;
-    component.props.forEach((prop) => {
-      prop.references.forEach((ref) => {
-        const isSetter = ref.startsWith("setter");
-        if (isSetter) {
-          const nodeId = ref.replace("setter", "state");
-          const target = currentStateNodes.find(
-            (target) => target.id === nodeId
-          );
+    n.className = "unfocused";
+    if (
+      childProps.every((p) => p.hidden) &&
+      childStates.every((s) => s.hidden) &&
+      childEffects.every((e) => e.hidden)
+    ) {
+      if (
+        childProps.some((p) => p.className?.split(" ").includes("focused")) ||
+        childStates.some((s) => s.className?.split(" ").includes("focused")) ||
+        childEffects.some((e) => e.className?.split(" ").includes("focused"))
+      ) {
+        n.className = "focused";
+      }
+    }
+  });
+}
 
-          if (!target) return;
-          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
-            return;
+function updateHighlightedMarks(
+  highlightedNodeIds: string[],
+  propNodes: Node[],
+  stateNodes: Node[],
+  effectNodes: Node[],
+  propEdges: Edge[],
+  effectEdges: Edge[]
+) {
+  const checkedNodes: (string | undefined)[] = [];
+  while (highlightedNodeIds.length > 0) {
+    const targetId = highlightedNodeIds.pop();
+    const target =
+      propNodes.find((n) => n.id === targetId) ||
+      stateNodes.find((n) => n.id === targetId) ||
+      effectNodes.find((n) => n.id === targetId);
 
-          newPropEdges.push({
-            id: `${ref}-${prop.id}`,
-            source: nodeId,
-            target: prop.id,
-            style: { stroke: "#A2845E" },
-            data: {
-              refRoot: target.id,
-              propRoot: component.id,
-            },
-            zIndex: 50,
-            sourceHandle: "setter",
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: "#A2845E",
-            },
-            animated: true,
-          });
-        } else {
-          const target =
-            currentStateNodes.find((target) => target.id === ref) ||
-            currentPropNodes.find((target) => target.id === ref);
+    if (checkedNodes.includes(targetId) || !target) {
+      continue;
+    }
 
-          if (!target) return;
-          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
-            return;
-
-          newPropEdges.push({
-            id: `${ref}-${prop.id}`,
-            source: ref,
-            target: prop.id,
-            style: ref.startsWith("prop")
-              ? { stroke: "#FF3B30", strokeWidth: innerEdgeWidth }
-              : { stroke: "#34C759" },
-            data: {
-              refRoot: target.id,
-              propRoot: component.id,
-            },
-            zIndex: 50,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: ref.startsWith("prop") ? "#FF3B30" : "#34C759",
-            },
-            animated: true,
-          });
+    target.className = "focused";
+    checkedNodes.push(targetId);
+    propEdges.forEach((e) => {
+      if (e.source === targetId) {
+        e.className = "focused";
+        if (e.style?.strokeWidth) {
+          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
         }
-      });
+        highlightedNodeIds.push(e.target);
+      }
+
+      if (e.target === targetId) {
+        e.className = "focused";
+        if (e.style?.strokeWidth) {
+          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
+        }
+        highlightedNodeIds.push(e.source);
+      }
     });
+
+    effectEdges.forEach((e) => {
+      if (e.source === targetId) {
+        e.className = "focused";
+        if (e.style?.strokeWidth) {
+          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
+        }
+        highlightedNodeIds.push(e.target);
+      }
+
+      if (e.target === targetId) {
+        e.className = "focused";
+        if (e.style?.strokeWidth) {
+          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
+        }
+        highlightedNodeIds.push(e.source);
+      }
+    });
+  }
+}
+
+function setHiddenNodes(
+  component: ComponentNode,
+  nodes: Node[],
+  hidden: boolean,
+  isHighlightMode?: boolean
+) {
+  nodes.forEach((node) => {
+    if (node.parentId === component.id) {
+      node.hidden = hidden;
+      isHighlightMode && (node.className = "unfocused");
+    }
+  });
+}
+
+function expandSingleComponent(
+  targetNode: Node,
+  {
+    componentNodes,
+    stateNodes,
+    propNodes,
+    effectNodes,
+    componentEdges,
+    propEdges,
+    effectEdges,
+  }: Marks,
+  expandedLevels: Record<number, number>,
+  isHighlightMode: boolean
+) {
+  const component = targetNode.data.component as ComponentNode;
+
+  expandComponentNode(
+    targetNode,
+    componentNodes,
+    expandedLevels,
+    isHighlightMode
+  );
+  setHiddenNodes(component, propNodes, false, isHighlightMode);
+  setHiddenNodes(component, stateNodes, false, isHighlightMode);
+  setHiddenNodes(component, effectNodes, false, isHighlightMode);
+
+  const candidates = collectHighlightedNodes(propNodes, stateNodes);
+
+  if (candidates.length > 0) {
+    console.log("expandSingleComponent - candidates", candidates);
+    updateHighlightedMarks(
+      candidates,
+      propNodes,
+      stateNodes,
+      effectNodes,
+      propEdges,
+      effectEdges
+    );
+
+    updateHighlightedComponentNodes(
+      componentNodes,
+      propNodes,
+      stateNodes,
+      effectNodes
+    );
+  }
+
+  updateComponentEdges(
+    componentEdges,
+    propEdges,
+    componentNodes,
+    isHighlightMode
+  );
+}
+
+const collapseSingleComponent = (
+  targetNode: Node,
+  {
+    componentNodes,
+    stateNodes,
+    propNodes,
+    effectNodes,
+    componentEdges,
+    propEdges,
+  }: Marks,
+  expandedLevels: Record<number, number>,
+  isHighlightMode: boolean
+) => {
+  const component = targetNode.data.component as ComponentNode;
+
+  collapseComponentNode(targetNode, componentNodes, expandedLevels);
+  setHiddenNodes(component, propNodes, true);
+  setHiddenNodes(component, stateNodes, true);
+  setHiddenNodes(component, effectNodes, true);
+
+  if (isHighlightMode) {
+    updateHighlightedComponentNodes(
+      componentNodes,
+      propNodes,
+      stateNodes,
+      effectNodes
+    );
+  }
+
+  updateComponentEdges(
+    componentEdges,
+    propEdges,
+    componentNodes,
+    isHighlightMode
+  );
+};
+
+const resetAllHighligtedMarks = ({
+  componentNodes,
+  stateNodes,
+  propNodes,
+  effectNodes,
+  componentEdges,
+  propEdges,
+  effectEdges,
+}: Marks) => {
+  componentNodes.forEach((n) => {
+    n.className = "";
+  });
+  stateNodes.forEach((n) => {
+    n.className = "";
+  });
+  propNodes.forEach((n) => {
+    n.className = "";
+  });
+  effectNodes.forEach((n) => {
+    n.className = "";
+  });
+  componentEdges.forEach((e) => {
+    e.className = "";
+    e.style = {
+      ...e.style,
+      strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
+    };
+  });
+  propEdges.forEach((e) => {
+    e.className = "";
+    e.style = {
+      ...e.style,
+      strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
+    };
+  });
+  effectEdges.forEach((e) => {
+    e.className = "";
+    e.style = {
+      ...e.style,
+      strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
+    };
+  });
+};
+
+function setHighlight(
+  node: Node,
+  {
+    componentNodes,
+    stateNodes,
+    propNodes,
+    effectNodes,
+    componentEdges,
+    propEdges,
+    effectEdges,
+  }: Marks
+) {
+  componentNodes.forEach((n) => {
+    n.className = "unfocused";
+  });
+  propNodes.forEach((n) => {
+    n.className = "unfocused";
+  });
+  stateNodes.forEach((n) => {
+    n.className = "unfocused";
+  });
+  effectNodes.forEach((n) => {
+    n.className = "unfocused";
+  });
+  componentEdges.forEach((e) => {
+    e.className = "unfocused";
+  });
+  propEdges.forEach((e) => {
+    e.className = "unfocused";
+    e.style = {
+      ...e.style,
+      strokeWidth: calcNewStrokeWidth({ ...e, className: "unfocused" }),
+    };
+  });
+  effectEdges.forEach((e) => {
+    e.className = "unfocused";
+    e.style = {
+      ...e.style,
+      strokeWidth: calcNewStrokeWidth({ ...e, className: "unfocused" }),
+    };
   });
 
-  return newPropEdges;
+  const candidates = [node.id];
+  updateHighlightedMarks(
+    candidates,
+    propNodes,
+    stateNodes,
+    effectNodes,
+    propEdges,
+    effectEdges
+  );
+
+  updateHighlightedComponentNodes(
+    componentNodes,
+    propNodes,
+    stateNodes,
+    effectNodes
+  );
+
+  updateComponentEdges(componentEdges, propEdges, componentNodes, true);
 }
 
 const MainView = ({ hookExtractor }: MainViewProps) => {
   const updateNodeInternals = useUpdateNodeInternals();
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
+  const reactFlow = useReactFlow();
 
   const [componentNodes, setComponentNodes] = useState<Node[]>([]);
   const [effectNodes, setEffectNodes] = useState<Node[]>([]);
@@ -315,16 +541,203 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   const [effectEdges, setEffectEdges] = useState<Edge[]>([]);
   const [propEdges, setPropEdges] = useState<Edge[]>([]);
 
+  const [isHighlightMode, setHighlightMode] = useState(false);
+  const [isCodeDisplayed, setCodeDisplayed] = useState(false);
+  const [codeDisplayedNode, setCodeDisplayedNode] = useState<Node | null>(null);
+  const [sourceCode, setSourceCode] = useState<{
+    path: string;
+    source: string;
+  }>({ path: "Not selected", source: "" });
+
   const expandedLevels = useRef<Record<number, number>>({});
 
   const extractor = hookExtractor.current;
   const components = extractor.componentList;
 
+  const setAnyMarks = ({
+    componentNodes,
+    effectNodes,
+    propNodes,
+    stateNodes,
+    componentEdges,
+    effectEdges,
+    propEdges,
+  }: {
+    componentNodes?: Node[];
+    effectNodes?: Node[];
+    propNodes?: Node[];
+    stateNodes?: Node[];
+    componentEdges?: Edge[];
+    effectEdges?: Edge[];
+    propEdges?: Edge[];
+  }) => {
+    componentNodes && setComponentNodes(componentNodes);
+    effectNodes && setEffectNodes(effectNodes);
+    propNodes && setPropNodes(propNodes);
+    stateNodes && setStateNodes(stateNodes);
+    componentEdges && setComponentEdges(componentEdges);
+    effectEdges && setEffectEdges(effectEdges);
+    propEdges && setPropEdges(propEdges);
+  };
+
+  const openCodeView = useCallback(
+    (component: ComponentNode) => {
+      setSourceCode({
+        path: component.path,
+        source: extractor.getSourceCode(component) || "",
+      });
+      setCodeDisplayed(true);
+    },
+    [extractor]
+  );
+
+  const createAllMarks = useCallback(() => {
+    return {
+      componentNodes: componentNodes.map((n) => ({ ...n })),
+      stateNodes: stateNodes.map((n) => ({ ...n })),
+      propNodes: propNodes.map((n) => ({ ...n })),
+      effectNodes: effectNodes.map((n) => ({ ...n })),
+      componentEdges: componentEdges.map((e) => ({ ...e })),
+      propEdges: propEdges.map((e) => ({ ...e })),
+      effectEdges: effectEdges.map((e) => ({ ...e })),
+    };
+  }, [
+    componentNodes,
+    stateNodes,
+    propNodes,
+    effectNodes,
+    componentEdges,
+    propEdges,
+    effectEdges,
+  ]);
+
+  const onNodeClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      const marks = createAllMarks();
+      if (node.type === "component") {
+        console.info("onNodeClick - expanding", node);
+        expandSingleComponent(
+          node,
+          marks,
+          expandedLevels.current,
+          isHighlightMode
+        );
+        expandedLevels.current[node.data.level as number]++;
+
+        setCodeDisplayedNode(node);
+      } else if (node.type === "expanded") {
+        console.info("onNodeClick - collapsing", node);
+        expandedLevels.current[node.data.level as number]--;
+        collapseSingleComponent(
+          node,
+          marks,
+          expandedLevels.current,
+          isHighlightMode
+        );
+
+        if (
+          !(
+            marks.effectNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            ) ||
+            marks.propNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            ) ||
+            marks.stateNodes.some(
+              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+            )
+          )
+        ) {
+          resetAllHighligtedMarks(marks);
+          setHighlightMode(false);
+        }
+      } else if (
+        node.type === "prop" ||
+        node.type === "state" ||
+        node.type === "effect"
+      ) {
+        console.info("onNodeClick - highlighting", node);
+        if (node.className?.split(" ").includes("focused")) {
+          resetAllHighligtedMarks(marks);
+          setHighlightMode(false);
+        } else {
+          setHighlight(node, marks);
+          setHighlightMode(true);
+          const parent = marks.componentNodes.find(
+            (n) => n.id === node.parentId
+          );
+          parent && setCodeDisplayedNode(parent);
+        }
+      }
+
+      setAnyMarks(marks);
+    },
+    [isHighlightMode, createAllMarks]
+  );
+
+  const onExpandedAllClicked = useCallback(() => {
+    const marks = createAllMarks();
+    marks.effectNodes.forEach((n) => (n.hidden = false));
+    marks.propNodes.forEach((n) => (n.hidden = false));
+    marks.stateNodes.forEach((n) => (n.hidden = false));
+
+    marks.componentNodes.forEach((node) => {
+      if (node.type === "component") {
+        expandComponentNode(
+          node,
+          marks.componentNodes,
+          expandedLevels.current,
+          isHighlightMode
+        );
+        expandedLevels.current[node.data.level as number]++;
+      }
+    });
+    updateComponentEdges(
+      marks.componentEdges,
+      marks.propEdges,
+      marks.componentNodes,
+      isHighlightMode
+    );
+    setAnyMarks(marks);
+  }, [isHighlightMode, createAllMarks]);
+
+  const onCollapseAllClicked = useCallback(() => {
+    const marks = createAllMarks();
+    marks.componentNodes.forEach((node) => {
+      if (node.type === "expanded") {
+        expandedLevels.current[node.data.level as number]--;
+        collapseComponentNode(
+          node,
+          marks.componentNodes,
+          expandedLevels.current
+        );
+      }
+    });
+
+    marks.effectNodes.forEach((n) => (n.hidden = true));
+    marks.propNodes.forEach((n) => (n.hidden = true));
+    marks.stateNodes.forEach((n) => (n.hidden = true));
+    marks.componentEdges.forEach((e) => (e.hidden = false));
+
+    resetAllHighligtedMarks(marks);
+    setHighlightMode(false);
+    setAnyMarks(marks);
+
+    setCodeDisplayed(false);
+  }, [createAllMarks]);
+
+  const onResetHighlightClicked = useCallback(() => {
+    const marks: Marks = createAllMarks();
+    resetAllHighligtedMarks(marks);
+    setHighlightMode(false);
+    setAnyMarks(marks);
+  }, [createAllMarks]);
+
   useEffect(() => {
     console.info("MainView Rendered", extractor);
 
-    const rootComponents = findRoots(components, extractor);
-    console.log(rootComponents);
+    const rootComponents = findRootComponents(components, extractor);
+    console.log("MainView - Roots", rootComponents);
 
     let maxLevel = 0;
     let index = 0;
@@ -336,7 +749,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           id: node.id,
           type: "component",
           style: { ...defaultAnimationStyle },
-          zIndex: -100,
           data: {
             label: node.name,
             level,
@@ -345,6 +757,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             hasProps: node.props.length > 0,
             component: node,
             baseWidth,
+            openCodeView,
           },
           position: { x: 0, y: 0 },
         });
@@ -379,7 +792,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       });
     }
     console.log("componentNodes", newNodes);
-    setComponentNodes(newNodes);
 
     const newEdges: Edge[] = [];
     components.forEach((component) => {
@@ -389,6 +801,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           source: component.id,
           target: child.id,
           zIndex: 50,
+          hidden: false,
           markerEnd: {
             type: MarkerType.ArrowClosed,
           },
@@ -398,276 +811,32 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       });
     });
 
-    components.forEach((component) => {
-      component.falseChildren.forEach((child) => {
-        newEdges.push({
-          id: `${component.id}-${child.id}`,
-          source: component.id,
-          target: child.id,
-          zIndex: 50,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-          },
-          animated: true,
-        });
-      });
+    const newPropNodes: Node[] = [];
+    const newStateNodes: Node[] = [];
+    const newEffectNodes: Node[] = [];
+    const newPropEdges: Edge[] = [];
+    const newEffectEdges: Edge[] = [];
+
+    components.forEach((node) => {
+      newPropNodes.push(...createPropNodes(node));
+      newStateNodes.push(...createStateNodes(node));
+      newEffectNodes.push(...createEffectNodes(node));
+      newPropEdges.push(
+        ...createPropEdges(newNodes, newPropEdges, newStateNodes, newPropNodes)
+      );
+      newEffectEdges.push(...createEffectEdges(node));
     });
 
-    setComponentEdges(newEdges);
-  }, [components, extractor]);
-
-  const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      console.info("onNodeClick", node);
-      if (node.type !== "component" && node.type !== "expanded") return;
-
-      let updatedNodes = componentNodes.map((n) => ({ ...n }));
-      const component = node.data.component as ComponentNode;
-      if (node.type === "component") {
-        updatedNodes = expandComponent(node, updatedNodes);
-        setComponentNodes(updatedNodes);
-
-        const updatedPropNodes = [...propNodes, ...convertPropNodes(component)];
-        setPropNodes(updatedPropNodes);
-
-        const updatedStateNodes = [
-          ...stateNodes,
-          ...convertStateNodes(component),
-        ];
-        setStateNodes(updatedStateNodes);
-
-        setEffectNodes([...effectNodes, ...convertEffectNodes(component)]);
-        setEffectEdges([...effectEdges, ...convertEffectEdges(component)]);
-        setPropEdges([
-          ...propEdges,
-          ...convertPropEdges(
-            updatedNodes,
-            propEdges,
-            updatedStateNodes,
-            updatedPropNodes
-          ),
-        ]);
-        expandedLevels.current[node.data.level as number]++;
-      } else {
-        expandedLevels.current[node.data.level as number]--;
-        setPropEdges([...removePropEdges(component, propEdges)]);
-        setEffectEdges([...removeEffectEdges(component, effectEdges)]);
-        setPropNodes([...removePropNodes(component, propNodes)]);
-        setStateNodes([...removeStateNodes(component, stateNodes)]);
-        setEffectNodes([...removeEffectNodes(component, effectNodes)]);
-
-        setComponentNodes(shrinkComponent(node, updatedNodes));
-      }
-    },
-    [componentNodes, propNodes, stateNodes, effectNodes, effectEdges, propEdges]
-  );
-
-  const expandComponent = (targetNode: Node, currentNodes: Node[]) => {
-    targetNode.type = "expanded";
-
-    const component = targetNode.data.component as ComponentNode;
-    const expandedHeight = Math.max(
-      Math.max(
-        component.props.length,
-        component.effects.length,
-        component.states.length
-      ) *
-        innerMarkGap +
-        20,
-      baseWidth
-    );
-    targetNode.data.size = {
-      width: baseExpadnedWidth,
-      height: expandedHeight,
-    };
-
-    const updatedNodes = currentNodes.map((node) => {
-      if (node.id === targetNode.id) {
-        return { ...targetNode, position: calcNewPosition(targetNode) };
-      }
-
-      const updateNode = { ...node };
-      if (
-        expandedLevels.current[targetNode.data.level as number] === 0 &&
-        (updateNode.data.level as number) > (targetNode.data.level as number)
-      ) {
-        (updateNode.data.translatedPosition as XYPosition).x +=
-          baseExpadnedWidth - baseWidth;
-      }
-
-      if (
-        updateNode.data.level === targetNode.data.level &&
-        (updateNode.data.index as number) > (targetNode.data.index as number)
-      ) {
-        (updateNode.data.translatedPosition as XYPosition).y +=
-          (targetNode.data.size as MarkSize).height - baseWidth;
-      }
-
-      updateNode.position = calcNewPosition(updateNode);
-      return updateNode;
+    setAnyMarks({
+      componentNodes: newNodes,
+      effectNodes: newEffectNodes,
+      propNodes: newPropNodes,
+      stateNodes: newStateNodes,
+      componentEdges: newEdges,
+      effectEdges: newEffectEdges,
+      propEdges: newPropEdges,
     });
-
-    return updatedNodes;
-  };
-
-  const shrinkComponent = (targetNode: Node, currentNodes: Node[]) => {
-    targetNode.type = "component";
-    const updatedNodes = currentNodes.map((node) => {
-      if (node.id === targetNode.id) {
-        return { ...targetNode, position: calcNewPosition(targetNode) };
-      }
-
-      const newNode = { ...node };
-      if (
-        expandedLevels.current[targetNode.data.level as number] === 0 &&
-        (newNode.data.level as number) > (targetNode.data.level as number)
-      ) {
-        (newNode.data.translatedPosition as XYPosition).x -=
-          baseExpadnedWidth - baseWidth;
-      }
-
-      if (
-        newNode.data.level === targetNode.data.level &&
-        (newNode.data.index as number) > (targetNode.data.index as number)
-      ) {
-        (newNode.data.translatedPosition as XYPosition).y -=
-          (targetNode.data.size as MarkSize).height - baseWidth;
-      }
-
-      newNode.position = calcNewPosition(newNode);
-      return newNode;
-    });
-    return updatedNodes;
-  };
-
-  const removeEffectNodes = (
-    component: ComponentNode,
-    currentEffectNodes: Node[]
-  ) => {
-    const updateEffectNodes: Node[] = [];
-    currentEffectNodes.forEach((effect) => {
-      if (!component.effects.find((target) => target.id === effect.id)) {
-        updateEffectNodes.push({ ...effect });
-      }
-    });
-    return updateEffectNodes;
-  };
-
-  const removePropNodes = (
-    component: ComponentNode,
-    currentPropNodes: Node[]
-  ) => {
-    const updatePropNodes: Node[] = [];
-    currentPropNodes.forEach((n) => {
-      if (!component.props.find((target) => target.id === n.id)) {
-        updatePropNodes.push({ ...n });
-      }
-    });
-    return updatePropNodes;
-  };
-
-  const removeStateNodes = (
-    component: ComponentNode,
-    currentStateNodes: Node[]
-  ) => {
-    const updateStateNodes: Node[] = [];
-    currentStateNodes.forEach((state) => {
-      if (!component.states.find((target) => target.id === state.id)) {
-        updateStateNodes.push({ ...state });
-      }
-    });
-    return updateStateNodes;
-  };
-
-  const removeEffectEdges = (
-    component: ComponentNode,
-    currentEffectEdges: Edge[]
-  ) => {
-    const updatedEffectEdges: Edge[] = [];
-    currentEffectEdges.forEach((edge) => {
-      if (edge.data?.component !== component.id) {
-        updatedEffectEdges.push({ ...edge });
-      }
-    });
-    return updatedEffectEdges;
-  };
-
-  const removePropEdges = (
-    component: ComponentNode,
-    currentPropEdges: Edge[]
-  ) => {
-    const updatedPropEdges: Edge[] = [];
-    currentPropEdges.forEach((edge) => {
-      if (
-        edge.data?.propRoot !== component.id &&
-        edge.data?.refRoot !== component.id
-      ) {
-        updatedPropEdges.push({ ...edge });
-      }
-    });
-    return updatedPropEdges;
-  };
-
-  const expandAllComponents = useCallback(() => {
-    let updatedComponentNodes = componentNodes.map((n) => ({ ...n }));
-    const updatedPropNodes = propNodes.map((n) => ({ ...n }));
-    const updatedStateNodes = stateNodes.map((n) => ({ ...n }));
-    const updatedEffectNodes = effectNodes.map((n) => ({ ...n }));
-    const updatedEffectEdges = effectEdges.map((e) => ({ ...e }));
-    const updatedPropEdges = propEdges.map((e) => ({ ...e }));
-
-    componentNodes.forEach((node) => {
-      if (node.type === "component") {
-        const component = node.data.component as ComponentNode;
-        updatedComponentNodes = expandComponent(node, updatedComponentNodes);
-        updatedPropNodes.push(...convertPropNodes(component));
-        updatedStateNodes.push(...convertStateNodes(component));
-        updatedEffectNodes.push(...convertEffectNodes(component));
-        updatedEffectEdges.push(...convertEffectEdges(component));
-
-        updatedPropEdges.push(
-          ...convertPropEdges(
-            updatedComponentNodes,
-            updatedPropEdges,
-            updatedStateNodes,
-            updatedPropNodes
-          )
-        );
-        expandedLevels.current[node.data.level as number]++;
-      }
-    });
-
-    setComponentNodes(updatedComponentNodes);
-    setPropNodes(updatedPropNodes);
-    setStateNodes(updatedStateNodes);
-    setEffectNodes(updatedEffectNodes);
-    setEffectEdges(updatedEffectEdges);
-    console.log("updatedPropEdges", updatedPropEdges);
-    setPropEdges(updatedPropEdges);
-  }, [
-    componentNodes,
-    propNodes,
-    stateNodes,
-    effectNodes,
-    effectEdges,
-    propEdges,
-  ]);
-
-  const shrinkAllComponents = useCallback(() => {
-    let updatedComponentNodes = componentNodes.map((n) => ({ ...n }));
-    componentNodes.forEach((node) => {
-      if (node.type === "expanded") {
-        expandedLevels.current[node.data.level as number]--;
-        updatedComponentNodes = shrinkComponent(node, updatedComponentNodes);
-      }
-    });
-    setPropNodes([]);
-    setStateNodes([]);
-    setEffectNodes([]);
-    setEffectEdges([]);
-    setPropEdges([]);
-    setComponentNodes(updatedComponentNodes);
-  }, [componentNodes]);
+  }, [components, extractor, openCodeView]);
 
   useEffect(() => {
     updateNodeInternals(nodes.map((n) => n.id));
@@ -680,6 +849,30 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
   useEffect(() => {
     setEdges([...componentEdges, ...effectEdges, ...propEdges]);
   }, [componentEdges, effectEdges, propEdges, setEdges]);
+
+  useEffect(() => {
+    if (!codeDisplayedNode) {
+      return;
+    }
+
+    if (
+      codeDisplayedNode.type === "component" ||
+      codeDisplayedNode.type === "expanded"
+    ) {
+      const component = codeDisplayedNode.data.component as ComponentNode;
+      setSourceCode({
+        path: component.path || "Not found",
+        source: extractor.getSourceCode(component) || "",
+      });
+    }
+  }, [codeDisplayedNode, extractor]);
+
+  useEffect(() => {
+    const transformX = 600;
+    const currentViewPort = reactFlow.getViewport();
+    currentViewPort.x += isCodeDisplayed ? transformX : -transformX;
+    reactFlow.setViewport(currentViewPort);
+  }, [isCodeDisplayed, reactFlow]);
 
   return (
     <div
@@ -694,116 +887,96 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         edges={edges}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
-        minZoom={1}
+        minZoom={0.5}
         maxZoom={4}
         fitView
         attributionPosition="bottom-left"
       >
-        <MiniMap position="top-left" pannable />
-        <Panel
+        <MiniMap
           position="top-left"
+          pannable
           style={{
-            display: "flex",
-            flexDirection: "column",
-            transform: "translate(0px, 200px)",
+            zIndex: 150,
+            transform: "translate(0px, 50px)",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
           }}
-        >
-          <div className="legend">
-            <div
+        />
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <div className="panelContainer">
+            <div className="appTitle">HookLens</div>
+            <Panel
+              position="top-left"
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 5,
+                transform: "translate(0px, 220px)",
               }}
             >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                }}
-              >
-                Mark
-              </div>
-              {legendMarkStyle.map((legend) => (
-                <div
-                  key={legend.label}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 5,
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRadius: 2,
-                      backgroundColor: legend.color,
-                      width: 30,
-                      height: 15,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 14,
-                    }}
-                  >
-                    {legend.label}
-                  </div>
+              <div className="legend">
+                <div className="legendItemContainer">
+                  <div className="legendTitle">Mark</div>
+                  {Object.values(nodeStyles).map((legend) => (
+                    <NodeLegendItem key={legend.label} {...legend} />
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 5,
+                <div className="legendItemContainer">
+                  <div className="legendTitle">Edge</div>
+                  {Object.values(edgeStyles).map((legend) => (
+                    <EdgeLegendItem key={legend.label} {...legend} />
+                  ))}
+                </div>
+              </div>
+            </Panel>
+          </div>
+          <div
+            className={
+              isCodeDisplayed ? "codeViewContainer" : "codeViewContainer hidden"
+            }
+          >
+            <div className="codeViewPath">
+              <FaFileCode
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  textShadow: "0 1px 4px rgba(0, 0, 0, 0.6)",
+                }}
+              />
+              <div>{sourceCode.path}</div>
+            </div>
+            <SyntaxHighlighter
+              style={atomOneDark}
+              language="javascript"
+              showLineNumbers={true}
+              customStyle={{
+                fontSize: 14,
+                textAlign: "left",
+                margin: "0px",
+                height: "100%",
               }}
             >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                }}
+              {sourceCode.source}
+            </SyntaxHighlighter>
+
+            <div className="controlContainer">
+              <button
+                className="codeViewHandle"
+                onClick={() => setCodeDisplayed(!isCodeDisplayed)}
               >
-                Edge
-              </div>
-              {legendEdgeStyle.map((legend) => (
-                <div
-                  key={legend.label}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 5,
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRadius: 2,
-                      border: `2px ${legend.style} ${legend.color}`,
-                      width: 26,
-                      height: 3,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 14,
-                    }}
-                  >
-                    {legend.label}
-                  </div>
-                </div>
-              ))}
+                {isCodeDisplayed ? <FaCaretLeft /> : <FaFileCode />}
+              </button>
+              <button className="control" onClick={onExpandedAllClicked}>
+                Expand all
+              </button>
+              <button className="control" onClick={onCollapseAllClicked}>
+                Collapse all
+              </button>
+              <button className="control" onClick={onResetHighlightClicked}>
+                Reset highlight
+              </button>
             </div>
           </div>
-          <button className="control" onClick={expandAllComponents}>
-            Expand all
-          </button>
-          <button className="control" onClick={shrinkAllComponents}>
-            Shrink all
-          </button>
-        </Panel>
+        </div>
       </ReactFlow>
     </div>
   );

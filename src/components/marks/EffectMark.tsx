@@ -1,6 +1,8 @@
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
+import nodeStyles from "../../data/nodeStyles.json";
+
 type EffectMarkData = Node<{ label: string }, "effect">;
 
 export default function EffectMark({ data }: NodeProps<EffectMarkData>) {
@@ -15,7 +17,7 @@ export default function EffectMark({ data }: NodeProps<EffectMarkData>) {
           width: width,
           height: height,
           borderRadius: 2,
-          background: "#32ADE6",
+          background: nodeStyles.effect.color,
         }}
       >
         <div

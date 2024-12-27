@@ -1,14 +1,49 @@
-import { Position, type Node, type NodeProps } from "@xyflow/react";
+import {
+  Position,
+  NodeToolbar,
+  type Node,
+  type NodeProps,
+} from "@xyflow/react";
 import { Handle } from "@xyflow/react";
+import { FaFileCode } from "react-icons/fa6";
+import { useCallback, useState } from "react";
+import { ComponentNode } from "../../module/HookExtractor";
 
-import "./ComponentStyle.css";
+import nodeStyles from "../../data/nodeStyles.json";
+
+import "./MarkStyle.css";
 
 type ComponentMarkData = Node<
-  { label: string; hasState: boolean; hasProps: boolean; baseWidth: number },
+  {
+    label: string;
+    hasState: boolean;
+    hasProps: boolean;
+    baseWidth: number;
+    component: ComponentNode;
+    openCodeView: (component: ComponentNode) => void;
+  },
   "component"
 >;
 
 export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
+  const [isToolbarOpen, setIsToolbarOpen] = useState(false);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const onMouseEnter = useCallback(() => {
+    if (timer) {
+      clearTimeout(timer);
+      setTimer(null);
+    }
+    setIsToolbarOpen(true);
+  }, [timer]);
+
+  const onMouseLeave = () => {
+    const timer = setTimeout(() => {
+      setIsToolbarOpen(false);
+    }, 1000);
+    setTimer(timer);
+  };
+
   const baseWidth = data.baseWidth;
   const width =
     data.hasState && data.hasProps
@@ -16,16 +51,21 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
       : data.hasState || data.hasProps
       ? baseWidth + 10
       : baseWidth;
+
   return (
-    <div className="component">
-      <div className="label">{data.label}</div>
+    <div
+      className="component"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="componentLabel">{data.label}</div>
       <div
         className="node-content"
         style={{
+          borderRadius: 2,
+          background: nodeStyles.component.color,
           width: width,
           height: baseWidth,
-          borderRadius: 2,
-          background: "#D9D9D9",
         }}
       />
       {data.hasProps && (
@@ -37,7 +77,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
             width: baseWidth,
             height: baseWidth,
             borderRadius: "2px 0 0 2px",
-            background: "#A2845E",
+            background: nodeStyles.prop.color,
           }}
         />
       )}
@@ -50,7 +90,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
             width: baseWidth,
             height: baseWidth,
             borderRadius: "0 2px 2px 0",
-            background: "#34C759",
+            background: nodeStyles.state.color,
           }}
         />
       )}
@@ -64,6 +104,26 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
         position={Position.Left}
         style={{ background: "#555" }}
       />
+      <NodeToolbar
+        isVisible={isToolbarOpen}
+        offset={5}
+        position={Position.Right}
+      >
+        <button
+          className="toolbarButton"
+          onClick={(e) => {
+            data.openCodeView(data.component);
+            e.stopPropagation();
+          }}
+        >
+          <FaFileCode
+            style={{
+              width: 20,
+              height: 20,
+            }}
+          />
+        </button>
+      </NodeToolbar>
     </div>
   );
 }
