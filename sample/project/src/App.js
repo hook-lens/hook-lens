@@ -21,6 +21,9 @@ function App() {
   const [filteredAlcoholList, setFilteredAlcoholList] = useState([]);
   const [filteredItemOffset, setFilteredItemOffset] = useState(0);
   const [filteredItemsId, setFilteredItemsId] = useState(0);
+  const [dummyQuizList, setDummyQuizList] = useState(
+    require("./Asset/dummy-quiz.json")
+  );
 
   return (
     <div className="App">
@@ -65,7 +68,15 @@ function App() {
                 />
               }
             />
-            <Route path="/quiz" element={<Quiz />} />
+            <Route
+              path="/quiz"
+              element={
+                <Quiz
+                  dummyQuizList={dummyQuizList}
+                  setDummyQuizList={setDummyQuizList}
+                />
+              }
+            />
           </Route>
           <Route path="/register" element={<Register />} />
         </Routes>

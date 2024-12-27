@@ -1,10 +1,18 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import "../Styles/Reset.css";
 import "../Styles/Quiz.css";
 import KakaoRecommendButton from "./KakaoRecommendButton";
 import { Link as RouterLink } from "react-router-dom";
 
 const RecommendItems = ({ mbtiCharacter, alcohols }) => {
+  const [recommended, setRecommended] = useState([]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setRecommended(alcohols);
+    console.log(alcohols);
+  }, [alcohols]);
+
   return (
     <>
       {alcohols.map((alcohol) => {
@@ -29,6 +37,7 @@ const RecommendItems = ({ mbtiCharacter, alcohols }) => {
               description={`${mbtiCharacter}인 당신에게 추천하는 전통술!`}
               buttonTitle={"술 MBTI로 전통술 추천받기"}
               alcohol={alcohol}
+              recommended={recommended}
             />
           </div>
         );
