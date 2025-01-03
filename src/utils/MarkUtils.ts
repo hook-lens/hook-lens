@@ -18,7 +18,9 @@ export function isConcernedLink(
   if (
     source.startsWith("prop") &&
     target.startsWith("prop") &&
-    sourceComponent.effects.every((effect) => !effect.dependencyIds.includes(source))
+    sourceComponent.effects.every(
+      (effect) => !effect.dependencyIds.includes(source)
+    )
   ) {
     return true;
   }
@@ -62,12 +64,18 @@ export function calcNewPosition(node: Node) {
 }
 
 export function calcNewStrokeWidth(edge: Edge) {
-  const baseWidth = isConcernedLink(edge.data?.sourceComponent as ComponentNode, edge.source, edge.target)
+  const baseWidth = isConcernedLink(
+    edge.data?.sourceComponent as ComponentNode,
+    edge.source,
+    edge.target
+  )
     ? constants.concernedEdgeWidth
     : 1;
-  return edge.className?.split(" ").includes("focused")
-    ? baseWidth + constants.edgeWidthPadding
-    : baseWidth;
+  const className = edge.className?.split(" ");
+  const padding =
+    (className?.includes("focused") ? constants.edgeWidthPadding : 0) +
+    (className?.includes("refered") ? constants.edgeWidthPadding : 0);
+  return baseWidth + padding;
 }
 
 export function calcExpandedHeight(component: ComponentNode) {

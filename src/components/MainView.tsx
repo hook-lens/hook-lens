@@ -209,14 +209,14 @@ function collectHighlightedNodes(propNodes: Node[], stateNodes: Node[]) {
 
   propNodes.forEach((n) => {
     if (n.className?.split(" ").includes("focused")) {
-      console.log("collectHighlightedNodes", n.className);
+      // console.log("collectHighlightedNodes", n.className);
       highlightedNodeIds.push(n.id);
     }
   });
 
   stateNodes.forEach((n) => {
     if (n.className?.split(" ").includes("focused")) {
-      console.log("collectHighlightedNodes", n.className);
+      // console.log("collectHighlightedNodes", n.className);
       highlightedNodeIds.push(n.id);
     }
   });
@@ -590,29 +590,58 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         ...n,
         className: n.className
           ?.split(" ")
-          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
       })),
       stateNodes: stateNodes.map((n) => ({
         ...n,
         className: n.className
           ?.split(" ")
-          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
       })),
       propNodes: propNodes.map((n) => ({
         ...n,
         className: n.className
           ?.split(" ")
-          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
       })),
       effectNodes: effectNodes.map((n) => ({
         ...n,
         className: n.className
           ?.split(" ")
-          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
       })),
-      componentEdges: componentEdges.map((e) => ({ ...e })),
-      propEdges: propEdges.map((e) => ({ ...e })),
-      effectEdges: effectEdges.map((e) => ({ ...e })),
+      componentEdges: componentEdges.map((e) => ({
+        ...e,
+        className: e.className
+          ?.split(" ")
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
+      })),
+      propEdges: propEdges.map((e) => ({
+        ...e,
+        className: e.className
+          ?.split(" ")
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
+      })),
+      effectEdges: effectEdges.map((e) => ({
+        ...e,
+        className: e.className
+          ?.split(" ")
+          .reduce((acc, cur) =>
+            cur !== "clicked" && cur !== "refered" ? acc + " " + cur : acc
+          ),
+      })),
     };
   }, [
     componentNodes,
@@ -702,16 +731,45 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         isChanged = true;
       }
 
-      console.log(isChanged);
       if (isChanged) {
         const clickedNode =
           marks.componentNodes.find((n) => n.id === node.id) ||
           marks.stateNodes.find((n) => n.id === node.id) ||
           marks.propNodes.find((n) => n.id === node.id) ||
           marks.effectNodes.find((n) => n.id === node.id);
-  
+
         if (clickedNode) {
           clickedNode.className += " clicked";
+          marks.componentEdges
+            .concat(marks.propEdges)
+            .concat(marks.effectEdges)
+            .forEach((e) => {
+              if (
+                e.source === clickedNode.id ||
+                e.target === clickedNode.id ||
+                e.data?.refRoot === clickedNode.id
+              ) {
+                e.className += " refered";
+                marks.stateNodes
+                  .concat(marks.propNodes)
+                  .concat(marks.effectNodes)
+                  .forEach((n) => {
+                    if (
+                      n.id !== clickedNode.id &&
+                      (n.id === e.source || n.id === e.target)
+                    ) {
+                      n.className += " refered";
+                    }
+                  });
+              }
+              e.style = {
+                ...e.style,
+                filter: e.className?.includes("refered")
+                  ? "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))"
+                  : undefined,
+                strokeWidth: calcNewStrokeWidth(e),
+              };
+            });
         }
 
         setAnyMarks(marks);
