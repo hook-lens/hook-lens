@@ -1,13 +1,13 @@
 import { selector } from "recoil";
 import * as React from "react";
-import getAllAlcohols from "../Api/getAllAlcohols";
+import getAllAromas from "../Api/getAllAromas";
 import getRate from "../Api/getRate";
-import { currentAlcoholIdState } from "./atom";
+import { currentAromaIdState } from "./atom";
 
 export const aromaListState = selector({
-  key: "alcoholListState",
+  key: "aromaListState",
   get: async () => {
-    const response = await getAllAlcohols();
+    const response = await getAllAromas();
     return response;
   },
 });
@@ -15,8 +15,8 @@ export const aromaListState = selector({
 export const rateListState = selector({
   key: "rateListState",
   get: async ({ get }) => {
-    const alcoholId = get(currentAlcoholIdState);
-    const response = await getRate(alcoholId);
+    const aromaId = get(currentAromaIdState);
+    const response = await getRate(aromaId);
     const sortedByTimeStamp = response.sort(function (a, b) {
       return a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0;
     });

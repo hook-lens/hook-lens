@@ -1,24 +1,27 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
-import {
-  auth,
-  logInWithEmailAndPassword,
-  signInWithGoogle,
-} from "../Firebase/service";
 import { useAuthState } from "react-firebase-hooks/auth";
-import "../Styles/Login.css";
 import Button from "@mui/material/Button";
 import { TextField } from "@mui/material";
 import GoogleButton from "react-google-button";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 
+import {
+  auth,
+  logInWithEmailAndPassword,
+  signInWithGoogle,
+} from "../Firebase/service";
+
+import "../Styles/Login.css";
+
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [user, loading] = useAuthState(auth);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (loading) {

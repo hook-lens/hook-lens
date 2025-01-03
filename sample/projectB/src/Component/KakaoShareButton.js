@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@mui/material";
 
 const KakaoShareButton = () => {
@@ -21,8 +21,8 @@ const KakaoShareButton = () => {
     window.Kakao.Link.sendDefault({
       objectType: "feed",
       content: {
-        title: "나에게 맞는 전통술은?",
-        description: "간단한 퀴즈를 풀고 전통술을 추천 받아보세요",
+        title: "나에게 맞는 아로마 향수는?",
+        description: "간단한 퀴즈를 풀고 향수를 추천 받아보세요",
         imageUrl: "https://i.postimg.cc/jSzh3tZY/ddddd.png",
         link: {
           mobileWebUrl: url,
@@ -30,8 +30,8 @@ const KakaoShareButton = () => {
         },
       },
       itemContent: {
-        profileText: "SNU Traditional Liquor",
-        profileImageUrl: "https://i.postimg.cc/DZHJfSnN/alcohol-icon.png",
+        profileText: "SNU Modern Aroma",
+        profileImageUrl: "https://i.postimg.cc/DZHJfSnN/aroma-icon.png",
       },
       social: {
         likeCount: 286,

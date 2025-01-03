@@ -1,15 +1,15 @@
 import { Autocomplete, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import alcohol_icon from "../Asset/alcohol-icon.png";
 import { Link as RouterLink } from "react-router-dom";
-import * as React from "react";
+
+import aroma_icon from "../Asset/aroma-icon.png";
 
 const QuizHeader = () => {
   return (
     <header>
       <nav className="header-nav">
         <div id="header-nav-left">
-          <span>Snu-Liquor | 전통주</span>
+          <span>Snu-Perfume</span>
         </div>
         <div id="header-nav-right" />
       </nav>
@@ -32,7 +32,7 @@ const QuizHeader = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="술을 검색해보세요..."
+                  label="Search aroma..."
                   size="small"
                 />
               )}
@@ -40,9 +40,9 @@ const QuizHeader = () => {
             <SearchIcon id="search-icon" style={{ fontSize: "2rem" }} />
           </div>
           <div className="center-top-container">
-            <img id="alcohol-icon" src={alcohol_icon} alt="alcohol" />
+            <img id="aroma-icon" src={aroma_icon} alt="aroma" />
             <span id="site-name" style={{ fontSize: "1.4rem", color: "black" }}>
-              Snu-Liquor
+              Snu-Perfume
             </span>
           </div>
           <div className="left-top-container">
@@ -52,13 +52,13 @@ const QuizHeader = () => {
               component={RouterLink}
               to="/home"
             >
-              홈으로 가기
+              Go to main
             </RouterLink>
           </div>
         </div>
         <div className="header-menu">
-          <li id="liquor-list">
-            <ul>술 MBTI 검사</ul>
+          <li id="aroma-list">
+            <ul>Check perspectives</ul>
           </li>
         </div>
       </div>

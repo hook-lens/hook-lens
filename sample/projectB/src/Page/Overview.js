@@ -1,70 +1,53 @@
-import * as React from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Input, Rating } from "@mui/material";
-import { auth } from "../Firebase/service";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import magnifier from "../Asset/magnifier.png";
-import ScoreIndicator from "../Component/ScoreIndicator";
-import "../Styles/Details.css";
-import { useState, useRef, useEffect } from "react";
 import {
   useRecoilValue,
   useRecoilState,
   useRecoilRefresher_UNSTABLE,
 } from "recoil";
+
 import { aromaListState, rateListState } from "../Store/selector";
 import postRate from "../Api/postRate";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Rate } from "../Entity/Rate";
+import { auth } from "../Firebase/service";
 import { currentAromaIdState } from "../Store/atom";
 import KakaoRecommendButton from "../Component/KakaoRecommendButton";
+import ScoreIndicator from "../Component/ScoreIndicator";
+
+import magnifier from "../Asset/magnifier.png";
+
+import "../Styles/Overview.css";
 
 const Overview = ({ sampleAromaData, setSampleAromaData }) => {
-  const [user, loading, error] = useAuthState(auth);
+  const [name, loaded, error] = useAuthState(auth);
   const aromaList = useRecoilValue(aromaListState);
-  let params = useParams();
-  const currentAroma = aromaList.filter((_aroma) => _aroma.id === params.id)[0];
-  const top = useRef();
-  const [score, setScore] = useState(0);
-  const [comment, setcomment] = useState("");
   const [currentAromaId, setCurrentAromaId] =
     useRecoilState(currentAromaIdState);
-  const commentList = useRecoilValue(rateListState);
   const commentListRefresh = useRecoilRefresher_UNSTABLE(rateListState);
+  const commentList = useRecoilValue(rateListState);
+  const [score, setScore] = useState(0);
+  const [comment, setcomment] = useState("");
   const navigate = useNavigate();
+  const top = useRef();
 
-  useEffect(() => {
-    if (loading) {
-      // maybe trigger a loading screen
-      return;
-    }
-    if (!user) navigate("/");
-  }, [user, loading]);
-
-  useEffect(() => {
-    if (sampleAromaData.length > 0) {
-      currentAroma = sampleAromaData.filter(
-        (_aroma) => _aroma.id === params.id
-      )[0];
-    }
-  }, [sampleAromaData]);
-
-  useEffect(() => {
-    top.current.focus();
-    setCurrentAromaId(currentAroma.id);
-  });
+  let params = useParams();
+  const currentAroma = aromaList.filter((_aroma) => _aroma.id === params.id)[0];
 
   const onChange = (e) => {
     setcomment(e.target.value);
   };
-  const postcomment = async () => {
+
+  const postComment = async () => {
     const timeStamp = new Date().getTime();
     postRate(
       new Rate(
         null,
-        user.uid,
-        user.displayName,
+        name.uid,
+        name.displayName,
         currentAroma.id,
         score,
         comment,
@@ -77,9 +60,31 @@ const Overview = ({ sampleAromaData, setSampleAromaData }) => {
         setScore(0);
       });
   };
+
+  useEffect(() => {
+    top.current.focus();
+    setCurrentAromaId(currentAroma.id);
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      // maybe trigger a loading screen
+      return;
+    }
+    if (!name) navigate("/");
+  }, [name, loaded]);
+
+  useEffect(() => {
+    if (sampleAromaData.length > 0) {
+      currentAroma = sampleAromaData.filter(
+        (aroma) => aroma.id === params.id
+      )[0];
+    }
+  }, [sampleAromaData]);
+
   return (
     <div ref={top}>
-      <div className="details">
+      <div className="overview">
         <div className="detailImage">
           <img
             className="aromaImage"
@@ -129,12 +134,12 @@ const Overview = ({ sampleAromaData, setSampleAromaData }) => {
             }}
           />
           <Input className="commentInput" onChange={onChange} value={comment} />
-          <Button className="rateButton" onClick={postcomment}>
-            리뷰 남기기
+          <Button className="rateButton" onClick={postComment}>
+            의견견 남기기
           </Button>
         </div>
         <div className="commentList">
-          <h2 className="commentHeader">리뷰 목록</h2>
+          <h2 className="commentHeader">의견 목록</h2>
           <div className="commentMain">
             {commentList.map((comment) => {
               return (

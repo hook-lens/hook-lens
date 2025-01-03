@@ -1,23 +1,25 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
+import GoogleButton from "react-google-button";
+import { TextField } from "@mui/material";
+import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+
 import {
   auth,
   registerWithEmailAndPassword,
   signInWithGoogle,
 } from "../Firebase/service";
-import "../Styles/Register.css";
-import GoogleButton from "react-google-button";
-import { TextField } from "@mui/material";
-import Button from "@mui/material/Button";
-import Link from "@mui/material/Link";
+
+import "../Styles/SignUp.css";
 
 function SignUp() {
+  const navigate = useNavigate();
+  const [name, loaded, error] = useAuthState(auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [user, loading, error] = useAuthState(auth);
-  const navigate = useNavigate();
 
   const register = () => {
     if (!nickname) alert("닉네임을 입력하세요");
@@ -25,9 +27,9 @@ function SignUp() {
   };
 
   useEffect(() => {
-    if (loading) return;
-    if (user) navigate("/home", { replace: true });
-  }, [user, loading]);
+    if (loaded) return;
+    if (name) navigate("/home", { replace: true });
+  }, [name, loaded]);
 
   return (
     <div className="register">

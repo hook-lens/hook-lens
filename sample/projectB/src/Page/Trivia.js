@@ -1,40 +1,56 @@
-import * as React from "react";
 import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import "../Styles/trivia.css";
 import { LinearProgress } from "@mui/material";
 import { useRecoilValue } from "recoil";
-import SuggestedItems from "../Component/SuggestedItems";
-import filter from "../Entity/Filter";
-import { aromaListState } from "../Store/selector";
 import { useNavigate } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
+
+import { aromaListState } from "../Store/selector";
+import SuggestedItems from "../Component/SuggestedItems";
+import filter from "../Entity/Filter";
 import { auth } from "../Firebase/service";
 
+import "../Styles/Trivia.css";
+
 const Trivia = (sampleTriviaData, setSampleTriviaData) => {
-  const [user, loading, error] = useAuthState(auth);
+  const [name, loaded, error] = useAuthState(auth);
   const triviaData = require("../Asset/trivia-data.json");
-  const mbtiData = require("../Asset/mbti.json");
-  const [triviaNumber, settriviaNumber] = useState(0);
-  const [conditionList, setConditionList] = useState([]);
-  const [mbti, setMbti] = useState("");
-  const [recommendedAromas, setRecommendedAromas] = useState([]);
+  const preferenceData = require("../Asset/mbti.json");
+
   const aromaList = useRecoilValue(aromaListState);
   const navigate = useNavigate();
 
+  const [triviaNumber, settriviaNumber] = useState(0);
+  const [conditionList, setConditionList] = useState([]);
+  const [preference, setPreference] = useState("");
+  const [recommendedAromas, setRecommendedAromas] = useState([]);
+
+  const onAnswerSelected = (triviaNumber, answer) => {
+    if (triviaNumber % 2 === 0) {
+      const slicedConditionList = conditionList.slice();
+      slicedConditionList.push(answer.condition);
+      
+      setConditionList(slicedConditionList);
+    } else {
+      setPreference(preference + answer.condition);
+    }
+
+    settriviaNumber(triviaNumber + 1);
+  };
+
   useEffect(() => {
-    if (loading) {
+    if (loaded) {
       // maybe trigger a loading screen
       return;
     }
-    if (!user) navigate("/");
-  }, [user, loading]);
+    if (!name) navigate("/");
+  }, [name, loaded]);
 
   useEffect(() => {
     if (triviaNumber === 8) {
-      const filtered = aromaList.filter((_aroma) =>
-        filter.matchConditions(_aroma, conditionList)
+      const filtered = aromaList.filter((aroma) =>
+        filter.matchConditions(aroma, conditionList)
       );
       const shuffled = filtered.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 3);
@@ -42,19 +58,6 @@ const Trivia = (sampleTriviaData, setSampleTriviaData) => {
       setSampleTriviaData(sampleTriviaData);
     }
   }, [triviaNumber, sampleTriviaData]);
-
-  const onAnswerSelected = (triviaNumber, answer) => {
-    if (triviaNumber % 2 !== 0) {
-      setMbti(mbti + answer.condition);
-    } else {
-      const _conditionList = conditionList.slice();
-      _conditionList.push(answer.condition);
-
-      setConditionList(_conditionList);
-    }
-
-    settriviaNumber(triviaNumber + 1);
-  };
 
   return (
     <>
@@ -66,10 +69,10 @@ const Trivia = (sampleTriviaData, setSampleTriviaData) => {
               fontWeight="bold"
               style={{ marginBottom: "5%" }}
             >
-              향수 MBTI 결과
+              향수 성향검사 결과
             </Typography>
             <Typography variant="h5" style={{ marginBottom: "5%" }}>
-              🍷{mbtiData[mbti]}🥂 인
+              🍷{preferenceData[preference]}🥂 인
             </Typography>
 
             {recommendedAromas.length === 0 ? (
@@ -82,9 +85,9 @@ const Trivia = (sampleTriviaData, setSampleTriviaData) => {
                 <Typography variant="h6" style={{ marginBottom: "5%" }}>
                   당신에게 아래의 향수들을 추천합니다!
                 </Typography>
-                <div id="recommend-liquor">
+                <div id="recommend-aroma">
                   <SuggestedItems
-                    mbtiCharacter={mbtiData[mbti]}
+                    aromaPreference={preferenceData[preference]}
                     aromas={recommendedAromas}
                   />
                 </div>

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@mui/material";
 
 const KakaoRecommendButton = ({ description, buttonTitle, aroma }) => {

@@ -1,4 +1,4 @@
-.alcoholImage {
+.aromaImage {
     margin-top: 30px;
     margin-bottom: 30px;
     width: 500px;
@@ -10,7 +10,7 @@
     justify-content: center;
 }
 
-.details {
+.overview {
     margin-left: 50px;
     margin-top: 50px;
     margin-bottom: 30px;
@@ -115,7 +115,7 @@ h1 {
     margin-left: 50px;
 }
 
-.alcoholName {
+.aromaName {
     margin-left: 20px;
     font-size: 50px;
 }
@@ -139,7 +139,7 @@ h1 {
     display: flex;
     height: auto;
     align-items: center;
-    justifyContent: 'space-between';
+    justify-content: 'space-between';
 }
 
 .rateStar{

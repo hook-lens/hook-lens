@@ -118,7 +118,7 @@ header{
     align-items : center;
     position : relative;
 }
-#alcohol-icon{
+#aroma-icon{
     width : 20%;
     position : absolute;
     top : -70%;
@@ -127,7 +127,7 @@ header{
     margin-top : 5%;
 }
 
-#liquor-list{
+#aroma-list{
     height : 100%;
     display : flex;
     justify-content : center;
@@ -148,7 +148,7 @@ main{
     height : 200vh;
     width : 100%;
 }
-#liquor-swiper{
+#aroma-swiper{
     height : 60vh;
     width : 100%;
     background-color : #C5C9D0;
@@ -166,10 +166,10 @@ main{
     height : 100%;
     width : 70%;
     position : relative;
-    #liquor-1{
+    #aroma-1{
         // opacity : 80%;
     }
-    #liquor-1-text{
+    #aroma-1-text{
         position : absolute;
         font-weight : bold;
         font-size : 120%;
@@ -178,7 +178,7 @@ main{
         left : 13%;
         top : 45%;
     }
-    #liquor-1-quiz{
+    #aroma-1-quiz{
         text-decoration : none;
         position : absolute;
         left : 20%;
@@ -192,7 +192,7 @@ main{
             color : black;
         }
     }
-    #liquor-2-text{
+    #aroma-2-text{
         position : absolute;
         font-weight : bold;
         font-size : 140%;
@@ -200,7 +200,7 @@ main{
         left : 20%;
         top : 20%;
     }
-    #liquor-2-quiz{
+    #aroma-2-quiz{
         text-decoration : none;
         position : absolute;
         left : 10%;
@@ -213,7 +213,7 @@ main{
             background-color : rgba(249, 239, 227, 0.8);
         }
     }
-    #liquor-3-text{
+    #aroma-3-text{
         position : absolute;
         font-weight : bold;
         font-size : 140%;
@@ -221,7 +221,7 @@ main{
         left : 16%;
         top : 10%;
     }
-    #liquor-3-quiz{
+    #aroma-3-quiz{
         text-decoration : none;
         font-weight : bold;
         position : absolute;
@@ -235,7 +235,7 @@ main{
             background-color : rgba(249, 239, 227, 0.5);
         }
     }
-    #liquor-4-text{
+    #aroma-4-text{
         position : absolute;
         font-weight : bold;
         font-size : 130%;
@@ -243,7 +243,7 @@ main{
         left : 14%;
         top : 10%;
     }
-    #liquor-4-quiz{
+    #aroma-4-quiz{
         text-decoration : none;
         font-weight : bold;
         position : absolute;
@@ -274,7 +274,7 @@ main{
     width : 5%;
     right : 50%;
 }
-.liquor{
+.aroma{
     height : 100%;
     width : 75%;
 }
@@ -313,7 +313,7 @@ footer{
     height : 60vh;
     background-color : white;
     margin-top : 3%;
-    #popular-alcohol-icon{
+    #popular-aroma-icon{
         height : 12%;
     }
     h1{
@@ -388,11 +388,11 @@ footer{
     height : 4%;
     margin-top : 5%;
 }
-#liquor-card-wrapper-text{
+#aroma-card-wrapper-text{
     height : 5%;
 
 }
-.liquor-card-wrapper{
+.aroma-card-wrapper{
     display : flex;
     flex-direction : row;
     // justify-content : center;
@@ -401,7 +401,7 @@ footer{
     // height : 350vh;
     width : 90%;
     margin : auto;
-    .liquor-card{
+    .aroma-card{
         width : 20%;
         margin : 0 2.5% 0 2.5%;
         height : 45vh;
@@ -412,10 +412,10 @@ footer{
             opacity : 80%;
             cursor : pointer;
         }
-        .liquor-div{
+        .aroma-div{
             width : 100%;
             height : 100%;
-            .liquor-card-img{
+            .aroma-card-img{
                 width : 100%;
                 max-height : 85%;
                 margin-bottom : 5%;

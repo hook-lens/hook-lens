@@ -1,48 +1,50 @@
 import { Link as RouterLink, Outlet } from "react-router-dom";
 import { Autocomplete, Button, TextField } from "@mui/material";
-import { logout } from "../Firebase/service";
 import SearchIcon from "@mui/icons-material/Search";
-import alcohol_icon from "../Asset/alcohol-icon.png";
 import * as React from "react";
 import { useRecoilValue } from "recoil";
-import { alcoholListState } from "../Store/selector";
 import { useNavigate } from "react-router-dom";
-import "../Styles/Home.scss";
+
+import { logout } from "../Firebase/service";
+import { aromaListState } from "../Store/selector";
+
+import aroma_icon from "../Asset/aroma-icon.png";
+
+import "../Styles/Dashboard.scss";
 import "../Styles/Reset.css";
 
 const Framework = () => {
   const navigate = useNavigate();
-  const alcoholList = useRecoilValue(alcoholListState);
-  const alcoholNameList = alcoholList.map((e) => e["name"]);
+  const aromaList = useRecoilValue(aromaListState);
+  const aromaNameList = aromaList.map((e) => e["name"]);
 
   const onClickNavigateDetail = () => {
     const box = document.querySelector("#combo-box-demo");
-    const idx = alcoholList.findIndex((e) => e.name === box.value);
+    const index = aromaList.findIndex((e) => e.name === box.value);
 
-    if (idx === -1) {
-      alert("Invalid liquor");
-      return;
+    if (index >= 0) {
+      const id = aromaList[index].id;
+      navigate(`/overviews/${id}`);
     } else {
-      const id = alcoholList[idx].id;
-      navigate(`/details/${id}`);
+      alert("Invalid aroma");
+      return;
     }
   };
-  alcoholNameList.sort();
+  aromaNameList.sort();
 
-  const handleCategoryClick = (event) => {
-    switch (event.target.innerText) {
-      case "탁주(막걸리)":
-        navigate("/liquor/1");
+  const onClickCategory = (e) => {
+    switch (e.target.innerText) {
+      case "우디노트(숲 향)":
+        navigate("/aroma/1");
         break;
-      case "약주/청주":
-        navigate("/liquor/2");
-
+      case "플로럴노트(꽃 향)":
+        navigate("/aroma/2");
         break;
-      case "과실주/와인":
-        navigate("/liquor/3");
+      case "프루티 노트(과실 향)":
+        navigate("/aroma/3");
         break;
-      case "증류주":
-        navigate("/liquor/4");
+      case "허브노트":
+        navigate("/aroma/4");
         break;
       default:
         break;
@@ -57,7 +59,7 @@ const Framework = () => {
       <header>
         <nav className="header-nav">
           <div id="header-nav-left">
-            <span>Snu-Liquor | 전통주</span>
+            <span>Snu-Perfume</span>
           </div>
           <div id="header-nav-right">
             <Button
@@ -76,7 +78,7 @@ const Framework = () => {
                 style={{ width: "50%", border: "0" }}
                 disablePortal
                 id="combo-box-demo"
-                options={alcoholNameList}
+                options={aromaNameList}
                 sx={{
                   width: 300,
                   ".MuiOutlinedInput-root": {
@@ -88,7 +90,7 @@ const Framework = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="술을 검색해보세요..."
+                    label="Search aromas..."
                     size="small"
                   />
                 )}
@@ -101,16 +103,16 @@ const Framework = () => {
             </div>
             <div className="center-top-container">
               <img
-                id="alcohol-icon"
-                src={alcohol_icon}
-                alt="alcohol"
+                id="aroma-icon"
+                src={aroma_icon}
+                alt="aroma"
                 onClick={() => onClickNavigateHome()}
               />
               <span
                 id="site-name"
                 style={{ fontSize: "1.4rem", color: "black" }}
               >
-                Snu-Liquor
+                Snu-Perfume
               </span>
             </div>
             <div className="left-top-container">
@@ -120,16 +122,16 @@ const Framework = () => {
                 component={RouterLink}
                 to="/quiz"
               >
-                술 MBTI 검사하러 가기
+                향수 성향 검사하러 가기
               </RouterLink>
             </div>
           </div>
           <div className="header-menu">
-            <ul id="liquor-list">
-              <li onClick={(e) => handleCategoryClick(e)}>탁주(막걸리)</li>
-              <li onClick={(e) => handleCategoryClick(e)}>약주/청주</li>
-              <li onClick={(e) => handleCategoryClick(e)}>과실주/와인</li>
-              <li onClick={(e) => handleCategoryClick(e)}>증류주</li>
+            <ul id="aroma-list">
+              <li onClick={(e) => onClickCategory(e)}>우디노트(숲 향)</li>
+              <li onClick={(e) => onClickCategory(e)}>플로럴노트(꽃 향)</li>
+              <li onClick={(e) => onClickCategory(e)}>프루티 노트(과실 향)</li>
+              <li onClick={(e) => onClickCategory(e)}>허브노트</li>
             </ul>
           </div>
         </div>

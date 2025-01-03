@@ -1,17 +1,23 @@
-import * as React from "react";
+import { useEffect, useState, useRef } from "react";
 import ReactPaginate from "react-paginate";
-import { useEffect, useRef } from "react";
 import RefinedItems from "./RefinedItems";
-import "../Styles/Home.scss";
+
+import "../Styles/Dashboard.scss";
 import "../Styles/Pagination.css";
 import "../Styles/Reset.css";
 
 function RefinedSegmentedItems(props) {
-  const [currentRefinedAromaList, setCurrentRefinedAromaList] = React.useState(
+  const [currentRefinedAromaList, setCurrentRefinedAromaList] = useState(
     []
   );
-  const [RefinedItemOffset, setRefinedItemOffset] = React.useState(0);
+  const [RefinedItemOffset, setRefinedItemOffset] = useState(0);
   const scrollToRef = useRef();
+
+  const handleViewClick = (e) => {
+    const offset =
+      (e.selected * props.itemsPerView) % props.aromaList.length;
+    setRefinedItemOffset(offset);
+  };
 
   useEffect(() => {
     const RefinedEndOffset = RefinedItemOffset + props.itemsPerView;
@@ -21,14 +27,9 @@ function RefinedSegmentedItems(props) {
     props.setViewCount(Math.ceil(props.aromaList.length / props.itemsPerView));
   }, [props.aromaList, RefinedItemOffset, props.itemsPerView]);
 
-  const handleViewClick = (event) => {
-    const newOffset =
-      (event.selected * props.itemsPerView) % props.aromaList.length;
-    setRefinedItemOffset(newOffset);
-  };
   return (
     <>
-      <div ref={scrollToRef} className="liquor-card-wrapper">
+      <div ref={scrollToRef} className="aroma-card-wrapper">
         <RefinedItems currentRefinedAromaList={currentRefinedAromaList} />
       </div>
       <div className="footer">

@@ -1,14 +1,14 @@
-import * as React from "react";
-import "../Styles/Reset.css";
-import "../Styles/Home.css";
 import { Link as RouterLink } from "react-router-dom";
+
+import "../Styles/Reset.css";
+import "../Styles/Dashboard.css";
 
 function RefinedItems({ currentRefinedAromaList }) {
   return (
     <>
-      {currentRefinedAromaList.map((aroma, idx) => {
+      {currentRefinedAromaList.map((aroma, i) => {
         return (
-          <RouterLink className="aroma-card" to={`/details/${aroma.id}`}>
+          <RouterLink className="aroma-card" to={`/overview/${aroma.id}`}>
             <div className="aroma-div">
               <img
                 className="aroma-card-img"

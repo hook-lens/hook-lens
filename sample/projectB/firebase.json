@@ -1,5 +1,5 @@
 {
-  "firebase" : "SNU Traditional Liquor",
+  "firebase" : "SNU Modern Aroma",
   "hosting": {
     "public": "build",
     "ignore": [
