@@ -274,25 +274,7 @@ function updateHighlightedMarks(
 
     target.className = "focused";
     checkedNodes.push(targetId);
-    propEdges.forEach((e) => {
-      if (e.source === targetId) {
-        e.className = "focused";
-        if (e.style?.strokeWidth) {
-          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
-        }
-        highlightedNodeIds.push(e.target);
-      }
-
-      if (e.target === targetId) {
-        e.className = "focused";
-        if (e.style?.strokeWidth) {
-          e.style = { ...e.style, strokeWidth: calcNewStrokeWidth(e) };
-        }
-        highlightedNodeIds.push(e.source);
-      }
-    });
-
-    effectEdges.forEach((e) => {
+    propEdges.concat(effectEdges).forEach((e) => {
       if (e.source === targetId) {
         e.className = "focused";
         if (e.style?.strokeWidth) {
@@ -670,28 +652,30 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         isChanged = true;
       } else if (node.type === "expanded") {
         console.info("onNodeClick - collapsing", node);
-        collapseSingleComponent(
-          node,
-          marks,
-          expandedLevels.current,
-          isHighlightMode
-        );
+        if (node.className?.includes("clicked")) {
+          collapseSingleComponent(
+            node,
+            marks,
+            expandedLevels.current,
+            isHighlightMode
+          );
 
-        if (
-          !(
-            marks.effectNodes.some(
-              (n) => n.className?.split(" ").includes("focused") && !n.hidden
-            ) ||
-            marks.propNodes.some(
-              (n) => n.className?.split(" ").includes("focused") && !n.hidden
-            ) ||
-            marks.stateNodes.some(
-              (n) => n.className?.split(" ").includes("focused") && !n.hidden
+          if (
+            !(
+              marks.effectNodes.some(
+                (n) => n.className?.split(" ").includes("focused") && !n.hidden
+              ) ||
+              marks.propNodes.some(
+                (n) => n.className?.split(" ").includes("focused") && !n.hidden
+              ) ||
+              marks.stateNodes.some(
+                (n) => n.className?.split(" ").includes("focused") && !n.hidden
+              )
             )
-          )
-        ) {
-          resetAllHighligtedMarks(marks);
-          setHighlightMode(false);
+          ) {
+            resetAllHighligtedMarks(marks);
+            setHighlightMode(false);
+          }
         }
         isChanged = true;
       } else if (
@@ -740,6 +724,15 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
         if (clickedNode) {
           clickedNode.className += " clicked";
+          marks.stateNodes
+            .concat(marks.propNodes)
+            .concat(marks.effectNodes)
+            .forEach((n) => {
+              if (n.parentId === clickedNode.id) {
+                n.className += " refered";
+              }
+            });
+
           marks.componentEdges
             .concat(marks.propEdges)
             .concat(marks.effectEdges)
