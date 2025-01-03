@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import "../Styles/Home.scss";
 import "../Styles/Reset.css";
 
-const Layout = () => {
+const Framework = () => {
   const navigate = useNavigate();
   const alcoholList = useRecoilValue(alcoholListState);
   const alcoholNameList = alcoholList.map((e) => e["name"]);
@@ -141,4 +141,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default Framework;

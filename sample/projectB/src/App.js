@@ -1,83 +1,84 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./Page/Login";
-import Home from "./Page/Home";
-import Quiz from "./Page/Quiz";
-import Register from "./Page/Register";
-import Details from "./Page/Details";
-import Layout from "./Page/Layout";
-import Liquor from "./Page/Liquor";
+import Dashboard from "./Page/Dashboard";
+import Trivia from "./Page/Trivia";
+import SignUp from "./Page/SignUp";
+import Overview from "./Page/Overview";
+import Framework from "./Page/Framework";
+import Aroma from "./Page/Aroma";
 import { useState } from "react";
 
 function App() {
-  const [pageCount, setPageCount] = useState(1);
-  const [currentAlcoholList, setCurrentAlcoholList] = useState([]);
-  const [itemOffset, setItemOffset] = useState(0);
-  const [dummyAlcoholList, setDummyAlcoholList] = useState(
-    require("./Asset/dummy-alcohols.json")
+  const [sampleAromaData, setSampleAromaData] = useState(
+    require("./Asset/sample-aromas.json")
   );
-  const [currentAlcoholId, setCurrentAlcoholId] = useState("");
-  const [category, setCategory] = useState(0);
-  const [filteredAlcoholList, setFilteredAlcoholList] = useState([]);
-  const [filteredItemOffset, setFilteredItemOffset] = useState(0);
-  const [filteredItemsId, setFilteredItemsId] = useState(0);
-  const [dummyQuizList, setDummyQuizList] = useState(
-    require("./Asset/dummy-quiz.json")
+  const [sampleTriviaData, setSampleTriviaData] = useState(
+    require("./Asset/sample-trivia.json")
   );
+
+  const [activeAromaList, setActiveAromaList] = useState([]);
+  const [listOffset, setListOffset] = useState(0);
+  const [selectedAromaId, setSelectedAromaId] = useState("");
+  const [typeFilter, setTypeFilter] = useState(0);
+  const [refinedAromaList, setRefinedAromaList] = useState([]);
+  const [refinedListOffset, setRefinedListOffset] = useState(0);
+  const [refinedItemId, setRefinedItemId] = useState(0);
+  const [viewCount, setViewCount] = useState(1);
 
   return (
     <div className="App">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route element={<Layout />}>
+          <Route element={<Framework />}>
             <Route
-              path="/liquor/:id"
+              path="/dashboard"
               element={
-                <Liquor
-                  filteredAlcoholList={filteredAlcoholList}
-                  setFilteredAlcoholList={setFilteredAlcoholList}
-                  filteredItemOffset={filteredItemOffset}
-                  setFilteredItemOffset={setFilteredItemOffset}
-                  filteredItemsId={filteredItemsId}
-                  setFilteredItemsId={setFilteredItemsId}
+                <Dashboard
+                  viewCount={viewCount}
+                  setViewCount={setViewCount}
+                  activeAromaList={activeAromaList}
+                  setActiveAromaList={setActiveAromaList}
+                  listOffset={listOffset}
+                  setListOffset={setListOffset}
+                  typeFilter={typeFilter}
                 />
               }
             />
             <Route
-              path="/home"
+              path="/aroma/:id"
               element={
-                <Home
-                  pageCount={pageCount}
-                  setPageCount={setPageCount}
-                  currentAlcoholList={currentAlcoholList}
-                  setCurrentAlcoholList={setCurrentAlcoholList}
-                  itemOffset={itemOffset}
-                  setItemOffset={setItemOffset}
-                  category={category}
+                <Aroma
+                  refinedAromaList={refinedAromaList}
+                  setRefinedAromaList={setRefinedAromaList}
+                  refinedListOffset={refinedListOffset}
+                  setRefinedListOffset={setRefinedListOffset}
+                  refinedItemId={refinedItemId}
+                  setRefinedItemId={setRefinedItemId}
                 />
               }
             />
             <Route
-              path="/details/:id"
+              path="/trivia"
               element={
-                <Details
-                  dummyAlcoholList={dummyAlcoholList}
-                  setDummyAlcoholList={setDummyAlcoholList}
+                <Trivia
+                  sampleTriviaData={sampleTriviaData}
+                  setSampleTriviaData={setSampleTriviaData}
                 />
               }
             />
             <Route
-              path="/quiz"
+              path="/overview/:id"
               element={
-                <Quiz
-                  dummyQuizList={dummyQuizList}
-                  setDummyQuizList={setDummyQuizList}
+                <Overview
+                  sampleAromaData={sampleAromaData}
+                  setSampleAromaData={setSampleAromaData}
                 />
               }
             />
           </Route>
-          <Route path="/register" element={<Register />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </BrowserRouter>
     </div>

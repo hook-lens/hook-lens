@@ -3,46 +3,44 @@ import "../Styles/Reset.css";
 import "../Styles/Home.css";
 import { Link as RouterLink } from "react-router-dom";
 import { useRecoilValue } from "recoil";
-import { alcoholListState } from "../Store/selector";
+import { aromaListState } from "../Store/selector";
 
-function Items({ currentItems, itemOffset }) {
-  const alcoholList = useRecoilValue(alcoholListState);
+function Items({ activeItems, listOffset }) {
+  const aromaList = useRecoilValue(aromaListState);
   const onClickItem = (idx, num) => {
-    if (localStorage.getItem("liquors") === null) {
-      const liquors = [];
-      liquors.push = idx;
-      localStorage.setItem("liquors", JSON.stringify(liquors));
+    if (localStorage.getItem("aromas") === null) {
+      const aromas = [];
+      aromas.push = idx;
+      localStorage.setItem("aromas", JSON.stringify(aromas));
     } else {
-      const liquors = JSON.parse(localStorage.getItem("liquors"));
-      liquors.push(idx);
-      localStorage.setItem("liquors", JSON.stringify(liquors));
+      const aromas = JSON.parse(localStorage.getItem("aromas"));
+      aromas.push(idx);
+      localStorage.setItem("aromas", JSON.stringify(aromas));
     }
   };
-  const currentPage = document.querySelector(".currentPage");
-  const curr_page = currentPage ? currentPage.innerText : 1;
+  const currentView = document.querySelector(".currentView");
+  const curr_view = currentView ? currentView.innerText : 1;
   return (
     <>
-      {currentItems.map((alcohol, idx) => {
+      {activeItems.map((aroma, idx) => {
         return (
           <RouterLink
-            className="liquor-card"
-            to={`/details/${
-              alcoholList[parseInt(curr_page) * 28 - 28 + idx].id
-            }`}
+            className="aroma-card"
+            to={`/details/${aromaList[parseInt(curr_view) * 28 - 28 + idx].id}`}
           >
             <div
-              className="liquor-div"
+              className="aroma-div"
               onClick={() =>
-                onClickItem(idx, parseInt(curr_page) * 28 - 28 + idx)
+                onClickItem(idx, parseInt(curr_view) * 28 - 28 + idx)
               }
             >
               <img
-                className="liquor-card-img"
+                className="aroma-card-img"
                 referrerPolicy="no-referrer"
-                src={alcohol.imageUrl}
+                src={aroma.imageUrl}
               />
               <span style={{ fontWeight: "bold" }}>
-                No. {itemOffset}: {alcohol.name} | {alcohol.price}원 <br></br>
+                No. {listOffset}: {aroma.name} | {aroma.price}원 <br></br>
               </span>
             </div>
           </RouterLink>

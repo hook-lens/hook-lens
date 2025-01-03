@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Button } from "@mui/material";
 
-const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
+const KakaoRecommendButton = ({ description, buttonTitle, aroma }) => {
   const url = window.location.href;
 
   const initKakao = () => {
@@ -21,17 +21,17 @@ const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
     window.Kakao.Link.sendDefault({
       objectType: "feed",
       content: {
-        title: `${alcohol.name} 을(를) 추천합니다!`,
+        title: `${aroma.name} 을(를) 추천합니다!`,
         description: description,
-        imageUrl: alcohol.imageUrl,
+        imageUrl: aroma.imageUrl,
         link: {
           mobileWebUrl: url,
           webUrl: url,
         },
       },
       itemContent: {
-        profileText: "SNU Traditional Liquor",
-        profileImageUrl: "https://i.postimg.cc/DZHJfSnN/alcohol-icon.png",
+        profileText: "SNU Traditional Aroma",
+        profileImageUrl: "https://i.postimg.cc/DZHJfSnN/aroma-icon.png",
       },
       buttons: [
         {

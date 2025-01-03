@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate } from "react-router-dom";
-import alcohol_icon from "../Asset/alcohol-icon.png";
-import liquor_1 from "../Asset/liquor-1.png";
-import liquor_2 from "../Asset/liquor-2.png";
-import liquor_3 from "../Asset/liquor-3.png";
-import liquor_4 from "../Asset/liquor-4.png";
+import aroma_icon from "../Asset/aroma-icon.png";
+import aroma_1 from "../Asset/aroma-1.png";
+import aroma_2 from "../Asset/aroma-2.png";
+import aroma_3 from "../Asset/aroma-3.png";
+import aroma_4 from "../Asset/aroma-4.png";
 import gift from "../Asset/gift.png";
 import party from "../Asset/party.png";
 import dinner from "../Asset/dinner.png";
@@ -24,10 +24,10 @@ import "swiper/css";
 import "../Styles/Reset.css";
 import "../Styles/Home.scss";
 import { useRecoilValue, useRecoilState } from "recoil";
-import { alcoholListState } from "../Store/selector";
-import PaginatedItems from "../Component/PaginatedItems";
+import { aromaListState } from "../Store/selector";
+import SegmentedItems from "../Component/SegmentedItems";
 
-const Home = (props) => {
+const Dashboard = (props) => {
   const [user, loading, error] = useAuthState(auth);
   const navigate = useNavigate();
 
@@ -39,7 +39,7 @@ const Home = (props) => {
     if (!user) navigate("/");
   }, [user, loading]);
 
-  const alcoholList = useRecoilValue(alcoholListState);
+  const aromaList = useRecoilValue(aromaListState);
   const randomHot = [];
   while (randomHot.length < 4) {
     const rand = Math.floor(Math.random() * 100);
@@ -49,15 +49,15 @@ const Home = (props) => {
   }
 
   useEffect(() => {
-    if (props.category !== 0) {
+    if (props.typeFilter !== 0) {
       const liquors = document.querySelector("#liquor-card-wrapper-text");
       liquors.scrollIntoView();
     }
 
-    if (props.itemOffset > 0) {
+    if (props.listOffset > 0) {
       console.info("scrolling to top");
     }
-  }, [props.category, props.itemOffset]);
+  }, [props.typeFilter, props.listOffset]);
 
   return (
     <div style={{ height: "100vh" }}>
@@ -81,12 +81,12 @@ const Home = (props) => {
         >
           <div id="swiper-wrapper">
             <SwiperSlide>
-              <img className="liquor" id="liquor-1" src={liquor_1} alt="" />
-              <span id="liquor-1-text">
+              <img className="aroma" id="aroma-1" src={aroma_1} alt="" />
+              <span id="aroma-1-text">
                 해물파전에 막걸리 한 잔 어때요?<br></br>술 MBTI로 막걸리와의
                 궁합을 알아보세요<br></br>
                 <RouterLink
-                  id="liquor-1-quiz"
+                  id="aroma-1-quiz"
                   style={{ borderRadius: "5%" }}
                   component={RouterLink}
                   to="/quiz"
@@ -96,46 +96,46 @@ const Home = (props) => {
               </span>
             </SwiperSlide>
             <SwiperSlide>
-              <img className="liquor" id="liquor-2" src={liquor_2} alt="" />
-              <span id="liquor-2-text">
+              <img className="aroma" id="aroma-2" src={aroma_2} alt="" />
+              <span id="aroma-2-text">
                 맑은 시냇물을 연상시키는 청주<br></br>술 MBTI로 '나의 청주' 찾기
                 <RouterLink
-                  id="liquor-2-quiz"
+                  id="aroma-2-quiz"
                   style={{ borderRadius: "3%" }}
                   component={RouterLink}
                   to="/quiz"
                 >
-                  술 MBTI 검사하러 가기
+                  향수 MBTI 검사하러 가기
                 </RouterLink>
               </span>
             </SwiperSlide>
             <SwiperSlide>
-              <img className="liquor" id="liquor-3" src={liquor_3} alt="" />
-              <span id="liquor-3-text">
+              <img className="aroma" id="aroma-3" src={aroma_3} alt="" />
+              <span id="aroma-3-text">
                 정갈하지만 강력한 증류주<br></br>
                 나만의 증류주 찾기
                 <RouterLink
-                  id="liquor-3-quiz"
+                  id="aroma-3-quiz"
                   style={{ borderRadius: "3%" }}
                   component={RouterLink}
                   to="/quiz"
                 >
-                  술 MBTI 검사하러 가기
+                  향수 MBTI 검사하러 가기
                 </RouterLink>
               </span>
             </SwiperSlide>
             <SwiperSlide>
-              <img className="liquor" id="liquor-4" src={liquor_4} alt="" />
-              <span id="liquor-4-text">
+              <img className="aroma" id="aroma-4" src={aroma_4} alt="" />
+              <span id="aroma-4-text">
                 우리 포도로 만들어진 더 맛있는 와인<br></br>술 MBTI로 나만의
                 와인 찾기
                 <RouterLink
-                  id="liquor-4-quiz"
+                  id="aroma-4-quiz"
                   style={{ borderRadius: "3%" }}
                   component={RouterLink}
-                  to="/quiz"
+                  to="/triva"
                 >
-                  술 MBTI 검사하러 가기
+                  향수 MBTI 검사하러 가기
                 </RouterLink>
               </span>
             </SwiperSlide>
@@ -165,7 +165,7 @@ const Home = (props) => {
         </div>
       </div>
       <div className="popular-section">
-        <img id="popular-alcohol-icon" src={alcohol_icon} alt="alcohol" />
+        <img id="popular-aroma-icon" src={aroma_icon} alt="aroma" />
         <h1 style={{ fontSize: "200%" }}>
           현재 <span style={{ color: "#bb17ff" }}>HOT</span>한 주류
         </h1>
@@ -174,15 +174,15 @@ const Home = (props) => {
             <RouterLink
               className="popular"
               component={RouterLink}
-              to={`/details/${alcoholList[rand].id}`}
+              to={`/details/${aromaList[rand].id}`}
             >
               <img
                 className="popular-img"
                 referrerPolicy="no-referrer"
-                src={alcoholList[rand].imageUrl}
+                src={aromaList[rand].imageUrl}
               />
               <span className="popular-text">
-                {alcoholList[rand].name} | {alcoholList[rand].price}원{" "}
+                {aromaList[rand].name} | {aromaList[rand].price}원{" "}
               </span>
             </RouterLink>
           ))}
@@ -230,13 +230,13 @@ const Home = (props) => {
         </div>
       </div>
 
-      <img id="ricewine-icon" src={ricewine} alt="alcohol" />
+      <img id="ricewine-icon" src={ricewine} alt="aroma" />
       <h1 style={{ fontSize: "200%" }} id="liquor-card-wrapper-text">
-        <span style={{ fontWeight: "bold" }}>전통주</span> 둘러보기
+        <span style={{ fontWeight: "bold" }}>향수</span> 둘러보기
       </h1>
-      <PaginatedItems itemsPerPage={28} {...props} />
+      <SegmentedItems itemsPerView={28} {...props} />
     </div>
   );
 };
 
-export default Home;
+export default Dashboard;

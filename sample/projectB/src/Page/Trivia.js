@@ -2,25 +2,25 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import "../Styles/Quiz.css";
+import "../Styles/trivia.css";
 import { LinearProgress } from "@mui/material";
 import { useRecoilValue } from "recoil";
-import RecommendItems from "../Component/RecommendItems";
+import SuggestedItems from "../Component/SuggestedItems";
 import filter from "../Entity/Filter";
-import { alcoholListState } from "../Store/selector";
+import { aromaListState } from "../Store/selector";
 import { useNavigate } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../Firebase/service";
 
-const Quiz = (dummyQuizList, setDummyQuizList) => {
+const Trivia = (sampleTriviaData, setSampleTriviaData) => {
   const [user, loading, error] = useAuthState(auth);
-  const quizData = require("../Asset/quiz-data.json");
+  const triviaData = require("../Asset/trivia-data.json");
   const mbtiData = require("../Asset/mbti.json");
-  const [quizNumber, setQuizNumber] = useState(0);
+  const [triviaNumber, settriviaNumber] = useState(0);
   const [conditionList, setConditionList] = useState([]);
   const [mbti, setMbti] = useState("");
-  const [recommendedAlcohols, setRecommendedAlcohols] = useState([]);
-  const alcoholList = useRecoilValue(alcoholListState);
+  const [recommendedAromas, setRecommendedAromas] = useState([]);
+  const aromaList = useRecoilValue(aromaListState);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,19 +32,19 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
   }, [user, loading]);
 
   useEffect(() => {
-    if (quizNumber === 8) {
-      const filtered = alcoholList.filter((_alcohol) =>
-        filter.matchConditions(_alcohol, conditionList)
+    if (triviaNumber === 8) {
+      const filtered = aromaList.filter((_aroma) =>
+        filter.matchConditions(_aroma, conditionList)
       );
       const shuffled = filtered.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, 3);
-      setRecommendedAlcohols(selected);
-      setDummyQuizList(dummyQuizList);
+      setRecommendedAromas(selected);
+      setSampleTriviaData(sampleTriviaData);
     }
-  }, [quizNumber, dummyQuizList]);
+  }, [triviaNumber, sampleTriviaData]);
 
-  const onAnswerSelected = (quizNumber, answer) => {
-    if (quizNumber % 2 !== 0) {
+  const onAnswerSelected = (triviaNumber, answer) => {
+    if (triviaNumber % 2 !== 0) {
       setMbti(mbti + answer.condition);
     } else {
       const _conditionList = conditionList.slice();
@@ -53,39 +53,39 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
       setConditionList(_conditionList);
     }
 
-    setQuizNumber(quizNumber + 1);
+    settriviaNumber(triviaNumber + 1);
   };
 
   return (
     <>
       <div id="question-container">
-        {quizNumber === quizData.length ? (
+        {triviaNumber === triviaData.length ? (
           <div id="result-container">
             <Typography
               variant="h6"
               fontWeight="bold"
               style={{ marginBottom: "5%" }}
             >
-              술 MBTI 결과
+              향수 MBTI 결과
             </Typography>
             <Typography variant="h5" style={{ marginBottom: "5%" }}>
               🍷{mbtiData[mbti]}🥂 인
             </Typography>
 
-            {recommendedAlcohols.length === 0 ? (
+            {recommendedAromas.length === 0 ? (
               <Typography variant="h6" style={{ marginBottom: "5%" }}>
-                당신이 좋아할만한 술을 찾지 못했어요.😭
-                <br /> 조만간 더 좋은 술을 찾아올게요!
+                당신이 좋아할만한 향수를 찾지 못했어요.😭
+                <br /> 조만간 더 좋은 향수를 찾아올게요!
               </Typography>
             ) : (
               <>
                 <Typography variant="h6" style={{ marginBottom: "5%" }}>
-                  당신에게 아래의 술들을 추천합니다!
+                  당신에게 아래의 향수들을 추천합니다!
                 </Typography>
                 <div id="recommend-liquor">
-                  <RecommendItems
+                  <SuggestedItems
                     mbtiCharacter={mbtiData[mbti]}
-                    alcohols={recommendedAlcohols}
+                    aromas={recommendedAromas}
                   />
                 </div>
               </>
@@ -95,7 +95,7 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
           <>
             <div id="question">
               <Typography variant="h5" style={{ marginBottom: "5%" }}>
-                {quizData[quizNumber].question}
+                {triviaData[triviaNumber].question}
               </Typography>
             </div>
             <div id="answer">
@@ -105,10 +105,13 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
                 color="secondary"
                 size="large"
                 onClick={() =>
-                  onAnswerSelected(quizNumber, quizData[quizNumber].answers[0])
+                  onAnswerSelected(
+                    triviaNumber,
+                    triviaData[triviaNumber].answers[0]
+                  )
                 }
               >
-                {quizData[quizNumber].answers[0].text}
+                {triviaData[triviaNumber].answers[0].text}
               </Button>
               <Button
                 id="answer-button"
@@ -116,19 +119,22 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
                 color="secondary"
                 size="large"
                 onClick={() =>
-                  onAnswerSelected(quizNumber, quizData[quizNumber].answers[1])
+                  onAnswerSelected(
+                    triviaNumber,
+                    triviaData[triviaNumber].answers[1]
+                  )
                 }
               >
-                {quizData[quizNumber].answers[1].text}
+                {triviaData[triviaNumber].answers[1].text}
               </Button>
               <LinearProgress
                 style={{ width: "24rem" }}
                 variant="determinate"
                 color="secondary"
-                value={((quizNumber + 1) / quizData.length) * 100}
+                value={((triviaNumber + 1) / triviaData.length) * 100}
               />
               <Typography id="question-count">
-                {`${quizNumber + 1} / ${quizData.length}`}
+                {`${triviaNumber + 1} / ${triviaData.length}`}
               </Typography>
             </div>
           </>
@@ -138,4 +144,4 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
   );
 };
 
-export default Quiz;
+export default Trivia;

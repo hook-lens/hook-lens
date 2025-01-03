@@ -5,7 +5,7 @@ import { auth } from "../Firebase/service";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import magnifier from "../Asset/magnifier.png";
-import StarRates from "../Component/StarRates";
+import ScoreIndicator from "../Component/ScoreIndicator";
 import "../Styles/Details.css";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -13,28 +13,25 @@ import {
   useRecoilState,
   useRecoilRefresher_UNSTABLE,
 } from "recoil";
-import { alcoholListState, rateListState } from "../Store/selector";
+import { aromaListState, rateListState } from "../Store/selector";
 import postRate from "../Api/postRate";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Rate } from "../Entity/Rate";
-import { currentAlcoholIdState } from "../Store/atom";
+import { currentAromaIdState } from "../Store/atom";
 import KakaoRecommendButton from "../Component/KakaoRecommendButton";
 
-const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
+const Overview = ({ sampleAromaData, setSampleAromaData }) => {
   const [user, loading, error] = useAuthState(auth);
-  const alcoholList = useRecoilValue(alcoholListState);
+  const aromaList = useRecoilValue(aromaListState);
   let params = useParams();
-  const currentAlcohol = alcoholList.filter(
-    (_alcohol) => _alcohol.id === params.id
-  )[0];
+  const currentAroma = aromaList.filter((_aroma) => _aroma.id === params.id)[0];
   const top = useRef();
-  const [starRate, setStarRate] = useState(0);
-  const [review, setReview] = useState("");
-  const [currentAlcoholId, setCurrentAlcoholId] = useRecoilState(
-    currentAlcoholIdState
-  );
-  const reviewList = useRecoilValue(rateListState);
-  const reviewListRefresh = useRecoilRefresher_UNSTABLE(rateListState);
+  const [score, setScore] = useState(0);
+  const [comment, setcomment] = useState("");
+  const [currentAromaId, setCurrentAromaId] =
+    useRecoilState(currentAromaIdState);
+  const commentList = useRecoilValue(rateListState);
+  const commentListRefresh = useRecoilRefresher_UNSTABLE(rateListState);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,38 +43,38 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
   }, [user, loading]);
 
   useEffect(() => {
-    if (dummyAlcoholList.length > 0) {
-      currentAlcohol = dummyAlcoholList.filter(
-        (_alcohol) => _alcohol.id === params.id
+    if (sampleAromaData.length > 0) {
+      currentAroma = sampleAromaData.filter(
+        (_aroma) => _aroma.id === params.id
       )[0];
     }
-  }, [dummyAlcoholList])
+  }, [sampleAromaData]);
 
   useEffect(() => {
     top.current.focus();
-    setCurrentAlcoholId(currentAlcohol.id);
+    setCurrentAromaId(currentAroma.id);
   });
 
   const onChange = (e) => {
-    setReview(e.target.value);
+    setcomment(e.target.value);
   };
-  const postReview = async () => {
+  const postcomment = async () => {
     const timeStamp = new Date().getTime();
     postRate(
       new Rate(
         null,
         user.uid,
         user.displayName,
-        currentAlcohol.id,
-        starRate,
-        review,
+        currentAroma.id,
+        score,
+        comment,
         timeStamp
       )
     )
-      .then(() => setReview(""))
+      .then(() => setcomment(""))
       .then(() => {
-        reviewListRefresh();
-        setStarRate(0);
+        commentListRefresh();
+        setScore(0);
       });
   };
   return (
@@ -85,61 +82,65 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
       <div className="details">
         <div className="detailImage">
           <img
-            className="alcoholImage"
+            className="aromaImage"
             referrerPolicy="no-referrer"
-            src={currentAlcohol.imageUrl}
+            src={currentAroma.imageUrl}
             alt=""
           />
         </div>
         <div className="detailRight">
-          <h1 className="alcoholName">{currentAlcohol.name}</h1>
+          <h1 className="aromaName">{currentAroma.name}</h1>
           <div className="detailList">
-            <h6>종류: {currentAlcohol.typeofAlcohol}</h6>
-            <h6>도수: {currentAlcohol.alcohol}</h6>
-            <h6>부피: {currentAlcohol.volume}</h6>
-            <h6>가격: {currentAlcohol.price}</h6>
-            <p className="description">{currentAlcohol.description}</p>
+            <h6>종류: {currentAroma.typeofaroma}</h6>
+            <h6>부피: {currentAroma.volume}</h6>
+            <h6>가격: {currentAroma.price}</h6>
+            <p className="description">{currentAroma.description}</p>
           </div>
         </div>
       </div>
       <div style={{ marginBottom: 20 }}>
         <KakaoRecommendButton
-          description={currentAlcohol.description}
+          description={currentAroma.description}
           buttonTitle={"더 알아보기"}
-          alcohol={currentAlcohol}
+          aroma={currentAroma}
         />
       </div>
       <br />
-      <a className="naverLink" href={currentAlcohol.detailUrl} target="_blank">
+      <a
+        className="naverLink"
+        href={currentAroma.detailUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
         <img src={magnifier} className="magnifier" />
         <h2 className="naverUrl">네이버 지식백과로 더 자세히 알아보기</h2>
       </a>
       <div className="rate">
-        <h5 className="rateHead">이 술을 평가해주세요!</h5>
+        <h5 className="rateHead">이 향수을 평가해주세요!</h5>
         <div className="rateDetails">
           <Rating
             className="rateStar"
             name="size-medium"
             defaultValue={0}
             size="small"
-            value={starRate}
+            value={score}
             onChange={(event, newValue) => {
-              setStarRate(newValue);
+              setScore(newValue);
             }}
           />
-          <Input className="reviewInput" onChange={onChange} value={review} />
-          <Button className="rateButton" onClick={postReview}>
+          <Input className="commentInput" onChange={onChange} value={comment} />
+          <Button className="rateButton" onClick={postcomment}>
             리뷰 남기기
           </Button>
         </div>
-        <div className="reviewList">
-          <h2 className="reviewHeader">리뷰 목록</h2>
-          <div className="reviewMain">
-            {reviewList.map((review) => {
+        <div className="commentList">
+          <h2 className="commentHeader">리뷰 목록</h2>
+          <div className="commentMain">
+            {commentList.map((comment) => {
               return (
                 <>
-                  <div className="reviewBox">
-                    <StarRates starNum={review.numberOfStars} />
+                  <div className="commentBox">
+                    <ScoreIndicator score={comment.numberOfStars} />
                     <Typography component="div" sx={{ width: "100%" }}>
                       <Typography
                         component="div"
@@ -159,7 +160,7 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
                           }}
                         >
                           <Box sx={{ fontWeight: 500, m: 1 }}>
-                            {review.userName}
+                            {comment.userName}
                           </Box>
                           <Box
                             sx={{
@@ -171,7 +172,7 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
                               m: 1,
                             }}
                           >
-                            {review.reviewText}
+                            {comment.commentText}
                           </Box>
                           <Typography
                             component="div"
@@ -188,7 +189,7 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
                                 ml: 1,
                               }}
                             >
-                              {new Date(review.timestamp).toLocaleString()}
+                              {new Date(comment.timestamp).toLocaleString()}
                             </Box>
                           </Typography>
                         </Typography>
@@ -205,4 +206,4 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
   );
 };
 
-export default Details;
+export default Overview;

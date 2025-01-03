@@ -3,20 +3,20 @@ import "../Styles/Reset.css";
 import "../Styles/Home.css";
 import { Link as RouterLink } from "react-router-dom";
 
-function FilteredItems({ currentFilteredAlcoholList }) {
+function RefinedItems({ currentRefinedAromaList }) {
   return (
     <>
-      {currentFilteredAlcoholList.map((alcohol, idx) => {
+      {currentRefinedAromaList.map((aroma, idx) => {
         return (
-          <RouterLink className="liquor-card" to={`/details/${alcohol.id}`}>
-            <div className="liquor-div">
+          <RouterLink className="aroma-card" to={`/details/${aroma.id}`}>
+            <div className="aroma-div">
               <img
-                className="liquor-card-img"
+                className="aroma-card-img"
                 referrerPolicy="no-referrer"
-                src={alcohol.imageUrl}
+                src={aroma.imageUrl}
               />
               <span style={{ fontWeight: "bold" }}>
-                {alcohol.name} | {alcohol.price}원 <br></br>
+                {aroma.name} | {aroma.price}원 <br></br>
               </span>
             </div>
           </RouterLink>
@@ -26,4 +26,4 @@ function FilteredItems({ currentFilteredAlcoholList }) {
   );
 }
 
-export default FilteredItems;
+export default RefinedItems;

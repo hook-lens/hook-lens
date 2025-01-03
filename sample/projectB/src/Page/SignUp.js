@@ -12,7 +12,7 @@ import { TextField } from "@mui/material";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 
-function Register() {
+function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
@@ -75,4 +75,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default SignUp;

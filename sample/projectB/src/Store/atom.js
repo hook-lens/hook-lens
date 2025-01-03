@@ -1,7 +1,7 @@
-import {atom} from "recoil";
+import { atom } from "recoil";
 import * as React from "react";
 
-export const currentAlcoholIdState =atom({
-  key:'currentAlcoholIdState',
-  default:''
+export const currentAromaIdState = atom({
+  key: "currentAromaIdState",
+  default: "",
 });
