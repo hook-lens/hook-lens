@@ -149,4 +149,6 @@ div.legendTitle {
     -1.5px 0px 0px black, -1.5px -1.5px 0px black, 0px -1.5px 0px black, -1.5px 1.5px 0px black,
     1.5px -1.5px 0px black, 0 2px 4px rgba(0, 0, 0, 0.6);
   opacity: 1;
+  font-weight: bold;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
