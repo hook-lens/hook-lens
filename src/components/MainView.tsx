@@ -85,8 +85,7 @@ const defaultAnimationStyle = constants.defaultAnimationStyle;
 function expandComponentNode(
   targetNode: Node,
   componentNodes: Node[],
-  expandedLevels: Record<number, number>,
-  isHighlightMode?: boolean
+  expandedLevels: Record<number, number>
 ) {
   const component = targetNode.data.component as ComponentNode;
   const expandedHeight = calcExpandedHeight(component);
@@ -100,10 +99,6 @@ function expandComponentNode(
       };
       node.position = calcNewPosition(node);
       return;
-    }
-
-    if (isHighlightMode) {
-      node.className = "unfocused";
     }
 
     if (
@@ -124,6 +119,8 @@ function expandComponentNode(
 
     node.position = calcNewPosition(node);
   });
+
+  expandedLevels[targetNode.data.level as number]++;
 }
 
 function collapseComponentNode(
@@ -131,6 +128,7 @@ function collapseComponentNode(
   componentNodes: Node[],
   expandedLevels: Record<number, number>
 ) {
+  expandedLevels[targetNode.data.level as number]--;
   componentNodes.forEach((node) => {
     if (node.id === targetNode.id) {
       node.type = "component";
@@ -344,12 +342,7 @@ function expandSingleComponent(
 ) {
   const component = targetNode.data.component as ComponentNode;
 
-  expandComponentNode(
-    targetNode,
-    componentNodes,
-    expandedLevels,
-    isHighlightMode
-  );
+  expandComponentNode(targetNode, componentNodes, expandedLevels);
   setHiddenNodes(component, propNodes, false, isHighlightMode);
   setHiddenNodes(component, stateNodes, false, isHighlightMode);
   setHiddenNodes(component, effectNodes, false, isHighlightMode);
@@ -593,10 +586,30 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
   const createAllMarks = useCallback(() => {
     return {
-      componentNodes: componentNodes.map((n) => ({ ...n })),
-      stateNodes: stateNodes.map((n) => ({ ...n })),
-      propNodes: propNodes.map((n) => ({ ...n })),
-      effectNodes: effectNodes.map((n) => ({ ...n })),
+      componentNodes: componentNodes.map((n) => ({
+        ...n,
+        className: n.className
+          ?.split(" ")
+          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+      })),
+      stateNodes: stateNodes.map((n) => ({
+        ...n,
+        className: n.className
+          ?.split(" ")
+          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+      })),
+      propNodes: propNodes.map((n) => ({
+        ...n,
+        className: n.className
+          ?.split(" ")
+          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+      })),
+      effectNodes: effectNodes.map((n) => ({
+        ...n,
+        className: n.className
+          ?.split(" ")
+          .reduce((acc, cur) => (cur !== "clicked" ? acc + " " + cur : acc)),
+      })),
       componentEdges: componentEdges.map((e) => ({ ...e })),
       propEdges: propEdges.map((e) => ({ ...e })),
       effectEdges: effectEdges.map((e) => ({ ...e })),
@@ -613,6 +626,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
+      let isChanged = false;
       const marks = createAllMarks();
       if (node.type === "component") {
         console.info("onNodeClick - expanding", node);
@@ -622,12 +636,11 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           expandedLevels.current,
           isHighlightMode
         );
-        expandedLevels.current[node.data.level as number]++;
 
         setCodeDisplayedNode(node);
+        isChanged = true;
       } else if (node.type === "expanded") {
         console.info("onNodeClick - collapsing", node);
-        expandedLevels.current[node.data.level as number]--;
         collapseSingleComponent(
           node,
           marks,
@@ -651,26 +664,58 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
           resetAllHighligtedMarks(marks);
           setHighlightMode(false);
         }
+        isChanged = true;
       } else if (
         node.type === "prop" ||
         node.type === "state" ||
         node.type === "effect"
       ) {
         console.info("onNodeClick - highlighting", node);
-        if (node.className?.split(" ").includes("focused")) {
-          resetAllHighligtedMarks(marks);
-          setHighlightMode(false);
+        const className = node.className?.split(" ");
+        if (className?.includes("focused")) {
+          if (className.includes("clicked")) {
+            resetAllHighligtedMarks(marks);
+            setHighlightMode(false);
+          }
         } else {
           setHighlight(node, marks);
+
+          marks.componentNodes.forEach((n) => {
+            if (
+              n.className?.split(" ").includes("focused") &&
+              n.type === "component"
+            ) {
+              expandSingleComponent(n, marks, expandedLevels.current, true);
+            }
+
+            if (n.type === "expanded") {
+              n.className = "unfocused";
+            }
+          });
+
           setHighlightMode(true);
           const parent = marks.componentNodes.find(
             (n) => n.id === node.parentId
           );
           parent && setCodeDisplayedNode(parent);
         }
+        isChanged = true;
       }
 
-      setAnyMarks(marks);
+      console.log(isChanged);
+      if (isChanged) {
+        const clickedNode =
+          marks.componentNodes.find((n) => n.id === node.id) ||
+          marks.stateNodes.find((n) => n.id === node.id) ||
+          marks.propNodes.find((n) => n.id === node.id) ||
+          marks.effectNodes.find((n) => n.id === node.id);
+  
+        if (clickedNode) {
+          clickedNode.className += " clicked";
+        }
+
+        setAnyMarks(marks);
+      }
     },
     [isHighlightMode, createAllMarks]
   );
@@ -683,13 +728,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
 
     marks.componentNodes.forEach((node) => {
       if (node.type === "component") {
-        expandComponentNode(
-          node,
-          marks.componentNodes,
-          expandedLevels.current,
-          isHighlightMode
-        );
-        expandedLevels.current[node.data.level as number]++;
+        expandComponentNode(node, marks.componentNodes, expandedLevels.current);
       }
     });
     updateComponentEdges(
@@ -705,7 +744,6 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
     const marks = createAllMarks();
     marks.componentNodes.forEach((node) => {
       if (node.type === "expanded") {
-        expandedLevels.current[node.data.level as number]--;
         collapseComponentNode(
           node,
           marks.componentNodes,

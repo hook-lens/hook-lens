@@ -6,6 +6,6 @@
   "concernedEdgeWidth": 1.5,
   "edgeWidthPadding": 1,
   "defaultAnimationStyle": {
-    "transition": "width 100ms, height 100ms, transform 100ms, opacity 100ms, stroke-width 100ms"
+    "transition": "all 100ms ease"
   }
 }

@@ -3,12 +3,27 @@ import HookExtractor, { ComponentNode } from "../module/HookExtractor";
 
 import constants from "../data/constants.json";
 
-export function isConcernedLink(source: string, target: string) {
-  return (
+export function isConcernedLink(
+  sourceComponent: ComponentNode,
+  source: string,
+  target: string
+) {
+  if (
     (source.startsWith("effect") && target.startsWith("prop")) ||
-    (source.startsWith("prop") && target.startsWith("prop")) ||
     (source.startsWith("state") && target.startsWith("effect"))
-  );
+  ) {
+    return true;
+  }
+
+  if (
+    source.startsWith("prop") &&
+    target.startsWith("prop") &&
+    sourceComponent.effects.every((effect) => !effect.dependencyIds.includes(source))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export function findRootComponents(
@@ -47,7 +62,7 @@ export function calcNewPosition(node: Node) {
 }
 
 export function calcNewStrokeWidth(edge: Edge) {
-  const baseWidth = isConcernedLink(edge.source, edge.target)
+  const baseWidth = isConcernedLink(edge.data?.sourceComponent as ComponentNode, edge.source, edge.target)
     ? constants.concernedEdgeWidth
     : 1;
   return edge.className?.split(" ").includes("focused")

@@ -70,7 +70,7 @@ export function createEffectEdges(component: ComponentNode) {
         source: depId,
         target: effect.id,
         className: "",
-        style: isConcernedLink(depId, effect.id)
+        style: isConcernedLink(component, depId, effect.id)
           ? {
               ...defaultAnimationStyle,
               stroke: edgeStyles.concernedLink.color,
@@ -81,15 +81,15 @@ export function createEffectEdges(component: ComponentNode) {
               stroke: edgeStyles.effect.color,
               strokeWidth: concernedEdgeWidth,
             },
-        animated: isConcernedLink(depId, effect.id) ? true : false,
+        animated: isConcernedLink(component, depId, effect.id) ? true : false,
         zIndex: 50,
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isConcernedLink(depId, effect.id)
+          color: isConcernedLink(component, depId, effect.id)
             ? edgeStyles.concernedLink.color
             : edgeStyles.effect.color,
         },
-        data: { component: component.id },
+        data: { sourceComponent: component },
         selectable: false,
       });
     });
@@ -100,7 +100,7 @@ export function createEffectEdges(component: ComponentNode) {
         source: effect.id,
         target: targetId,
         className: "",
-        style: isConcernedLink(effect.id, targetId)
+        style: isConcernedLink(component, effect.id, targetId)
           ? {
               ...defaultAnimationStyle,
               stroke: edgeStyles.concernedLink.color,
@@ -111,15 +111,17 @@ export function createEffectEdges(component: ComponentNode) {
               stroke: edgeStyles.effect.color,
               strokeWidth: concernedEdgeWidth,
             },
-        animated: isConcernedLink(effect.id, targetId) ? true : false,
+        animated: isConcernedLink(component, effect.id, targetId)
+          ? true
+          : false,
         zIndex: 50,
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isConcernedLink(effect.id, targetId)
+          color: isConcernedLink(component, effect.id, targetId)
             ? edgeStyles.concernedLink.color
             : edgeStyles.effect.color,
         },
-        data: { component: component.id },
+        data: { sourceComponent: component },
         selectable: false,
       });
     });
@@ -128,28 +130,28 @@ export function createEffectEdges(component: ComponentNode) {
 }
 
 export function createPropEdges(
-  nodes: Node[],
-  currentPropEdges: Edge[],
-  currentStateNodes: Node[],
-  currentPropNodes: Node[]
+  componentNodes: Node[],
+  propEdges: Edge[],
+  stateNodes: Node[],
+  propNodes: Node[]
 ) {
   const newPropEdges: Edge[] = [];
-  nodes.forEach((node) => {
+  componentNodes.forEach((node) => {
     if (!node.data.component) return;
 
     const component = node.data.component as ComponentNode;
     component.props.forEach((prop) => {
       prop.references.forEach((ref) => {
-        const isSetter = ref.startsWith("setter");
-        if (isSetter) {
+        if (ref.startsWith("setter")) {
           const nodeId = ref.replace("setter", "state");
-          const target = currentStateNodes.find(
-            (target) => target.id === nodeId
-          );
+          const target = stateNodes.find((target) => target.id === nodeId);
 
           if (!target) return;
-          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
-            return;
+          if (propEdges.find((edge) => edge.id === `${ref}-${prop.id}`)) return;
+
+          const sourceComponent = componentNodes.find(
+            (node) => node.id === target.parentId
+          )?.data.component as ComponentNode;
 
           newPropEdges.push({
             id: `${ref}-${prop.id}`,
@@ -164,6 +166,8 @@ export function createPropEdges(
             data: {
               refRoot: target.parentId,
               propRoot: component.id,
+              component: component,
+              sourceComponent,
             },
             zIndex: 50,
             sourceHandle: "setter",
@@ -176,19 +180,22 @@ export function createPropEdges(
           });
         } else {
           const target =
-            currentStateNodes.find((target) => target.id === ref) ||
-            currentPropNodes.find((target) => target.id === ref);
+            stateNodes.find((target) => target.id === ref) ||
+            propNodes.find((target) => target.id === ref);
 
           if (!target) return;
-          if (currentPropEdges.find((edge) => edge.id === `${ref}-${prop.id}`))
-            return;
+          if (propEdges.find((edge) => edge.id === `${ref}-${prop.id}`)) return;
+
+          const sourceComponent = componentNodes.find(
+            (node) => node.id === target.parentId
+          )?.data.component as ComponentNode;
 
           newPropEdges.push({
             id: `${ref}-${prop.id}`,
             source: ref,
             target: prop.id,
             className: "",
-            style: isConcernedLink(ref, prop.id)
+            style: isConcernedLink(sourceComponent, ref, prop.id)
               ? {
                   ...defaultAnimationStyle,
                   stroke: edgeStyles.concernedLink.color,
@@ -202,11 +209,13 @@ export function createPropEdges(
             data: {
               refRoot: target.parentId,
               propRoot: component.id,
+              component: component,
+              sourceComponent,
             },
             zIndex: 50,
             markerEnd: {
               type: MarkerType.ArrowClosed,
-              color: isConcernedLink(ref, prop.id)
+              color: isConcernedLink(sourceComponent, ref, prop.id)
                 ? edgeStyles.concernedLink.color
                 : edgeStyles.stateValueProp.color,
             },
