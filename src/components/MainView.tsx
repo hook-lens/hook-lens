@@ -1003,7 +1003,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             >
               <div className="legend">
                 <div className="legendItemContainer">
-                  <div className="legendTitle">Mark</div>
+                  <div className="legendTitle">Node</div>
                   {Object.values(nodeStyles).map((legend) => (
                     <NodeLegendItem key={legend.label} {...legend} />
                   ))}
