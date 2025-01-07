@@ -1,4 +1,4 @@
-import "./App.css";
+const App2 = `import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./Page/Login";
 import Home from "./Page/Home";
@@ -85,3 +85,5 @@ function App() {
 }
 
 export default App;
+`;
+export default App2;

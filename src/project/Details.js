@@ -1,4 +1,4 @@
-import * as React from "react";
+const Details = `import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Input, Rating } from "@mui/material";
 import { auth } from "../Firebase/service";
@@ -204,5 +204,8 @@ const Details = ({ dummyAlcoholList, setDummyAlcoholList }) => {
     </div>
   );
 };
+
+export default Details;
+`;
 
 export default Details;

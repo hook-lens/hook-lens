@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+const Register = `import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
@@ -74,5 +74,8 @@ function Register() {
     </div>
   );
 }
+
+export default Register;
+`;
 
 export default Register;

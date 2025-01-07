@@ -1,4 +1,5 @@
-import * as React from "react";
+const Home =
+  `import * as React from "react";
 import { auth } from "../Firebase/service";
 import { useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
@@ -174,7 +175,9 @@ const Home = (props) => {
             <RouterLink
               className="popular"
               component={RouterLink}
-              to={`/details/${alcoholList[rand].id}`}
+              to={` +
+  "`/details/${alcoholList[rand].id}`" +
+  `}
             >
               <img
                 className="popular-img"
@@ -238,5 +241,8 @@ const Home = (props) => {
     </div>
   );
 };
+
+export default Home;
+`;
 
 export default Home;

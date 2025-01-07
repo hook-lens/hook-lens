@@ -1,4 +1,5 @@
-import * as React from "react";
+const FilteredItems =
+  `import * as React from "react";
 import "../Styles/Reset.css";
 import "../Styles/Home.css";
 import { Link as RouterLink } from "react-router-dom";
@@ -8,7 +9,9 @@ function FilteredItems({ currentFilteredAlcoholList }) {
     <>
       {currentFilteredAlcoholList.map((alcohol, idx) => {
         return (
-          <RouterLink className="liquor-card" to={`/details/${alcohol.id}`}>
+          <RouterLink className="liquor-card" to={` +
+  "`/details/${alcohol.id}`" +
+  `}>
             <div className="liquor-div">
               <img
                 className="liquor-card-img"
@@ -25,5 +28,8 @@ function FilteredItems({ currentFilteredAlcoholList }) {
     </>
   );
 }
+
+export default FilteredItems;
+`;
 
 export default FilteredItems;

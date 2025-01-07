@@ -1,4 +1,4 @@
-import * as React from "react";
+const Liquor = `import * as React from "react";
 import "../Styles/Reset.css";
 import "../Styles/Home.scss";
 import "../Styles/Pagination.css";
@@ -86,5 +86,8 @@ function Liquor(props) {
     </>
   );
 }
+
+export default Liquor;
+`;
 
 export default Liquor;

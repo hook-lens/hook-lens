@@ -1,4 +1,4 @@
-import * as React from "react";
+const PaginatedItems = `import * as React from "react";
 import ReactPaginate from "react-paginate";
 import { useRecoilValue } from "recoil";
 import { useEffect, useRef } from "react";
@@ -58,5 +58,8 @@ function PaginatedItems(props) {
     </>
   );
 }
+
+export default PaginatedItems;
+`;
 
 export default PaginatedItems;

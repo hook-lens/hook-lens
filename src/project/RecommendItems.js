@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+const RecommendItems =
+  `import React, { useState, useEffect } from "react";
 import "../Styles/Reset.css";
 import "../Styles/Quiz.css";
 import KakaoRecommendButton from "./KakaoRecommendButton";
@@ -20,7 +21,9 @@ const RecommendItems = ({ mbtiCharacter, alcohols }) => {
           <div>
             <RouterLink
               className="liquor-card"
-              to={`/details/${alcohol.id}`}
+              to={` +
+  "`/details/${alcohol.id}`" +
+  `}
               style={{ textDecoration: "none", color: "inherit" }}
             >
               <img
@@ -34,7 +37,9 @@ const RecommendItems = ({ mbtiCharacter, alcohols }) => {
               </span>
             </RouterLink>
             <KakaoRecommendButton
-              description={`${mbtiCharacter}인 당신에게 추천하는 전통술!`}
+              description={` +
+  "`${mbtiCharacter}인 당신에게 추천하는 전통술!`" +
+  `}
               buttonTitle={"술 MBTI로 전통술 추천받기"}
               alcohol={alcohol}
               recommended={recommended}
@@ -45,5 +50,8 @@ const RecommendItems = ({ mbtiCharacter, alcohols }) => {
     </>
   );
 };
+
+export default RecommendItems;
+`;
 
 export default RecommendItems;

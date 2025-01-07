@@ -1,4 +1,5 @@
-import * as React from "react";
+const Quiz =
+  `import * as React from "react";
 import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -128,7 +129,9 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
                 value={((quizNumber + 1) / quizData.length) * 100}
               />
               <Typography id="question-count">
-                {`${quizNumber + 1} / ${quizData.length}`}
+                {` +
+  "`${quizNumber + 1} / ${quizData.length}`" +
+  `}
               </Typography>
             </div>
           </>
@@ -137,5 +140,8 @@ const Quiz = (dummyQuizList, setDummyQuizList) => {
     </>
   );
 };
+
+export default Quiz;
+`;
 
 export default Quiz;

@@ -4,50 +4,118 @@ import HookExtractor from "./module/HookExtractor";
 // import System from "./components/System";
 import FlowView from "./components/FlowView";
 import { DataProps } from "./types/data";
+import App2 from "./project/App2";
+import FilteredItems from "./project/FilteredItems";
+import Details from "./project/Details";
+import FilteredPaginatedItems from "./project/FilteredPaginatedItems";
+import Home from "./project/Home";
+import Items from "./project/Items";
+import KakaoRecommendButton from "./project/KakaoRecommendButton";
+import KakaoShareButton from "./project/KakaoShareButton";
+import Layout from "./project/Layout";
+import Liquor from "./project/Liquor";
+import Login from "./project/Login";
+import PaginatedItems from "./project/PaginatedItems";
+import Quiz from "./project/Quiz";
+import QuizHeader from "./project/QuizHeader";
+import RecommendItems from "./project/RecommendItems";
+import Register from "./project/Register";
+import StarRates from "./project/StarRates";
 
 function App() {
-  const [isVisualizationPage, setIsVisualizationPage] = useState(false);
-  const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
+  // const [isVisualizationPage, setIsVisualizationPage] = useState(false);
+  // const [isVisualizationEnabled, setIsVisualizationEnabled] = useState(false);
   const hookExtractor = useRef(new HookExtractor());
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  // const inputRef = useRef<HTMLInputElement>(null);
   const [data, setData] = useState<DataProps>();
 
   useEffect(() => {
-    const directoryPath = "/project/";
+    const fileList = [
+      {
+        name: "App2",
+        text: () => Promise.resolve(App2),
+      },
+      {
+        name: "Details",
+        text: () => Promise.resolve(Details),
+      },
+      {
+        name: "FilteredItems",
+        text: () => Promise.resolve(FilteredItems),
+      },
+      {
+        name: "FilteredPaginatedItems",
+        text: () => Promise.resolve(FilteredPaginatedItems),
+      },
+      {
+        name: "Home",
+        text: () => Promise.resolve(Home),
+      },
+      {
+        name: "Items",
+        text: () => Promise.resolve(Items),
+      },
+      {
+        name: "KakaoRecommendButton",
+        text: () => Promise.resolve(KakaoRecommendButton),
+      },
+      {
+        name: "KakaoShareButton",
+        text: () => Promise.resolve(KakaoShareButton),
+      },
+      {
+        name: "Layout",
+        text: () => Promise.resolve(Layout),
+      },
+      {
+        name: "Liquor",
+        text: () => Promise.resolve(Liquor),
+      },
+      {
+        name: "Login",
+        text: () => Promise.resolve(Login),
+      },
+      {
+        name: "PaginatedItems",
+        text: () => Promise.resolve(PaginatedItems),
+      },
+      {
+        name: "Quiz",
+        text: () => Promise.resolve(Quiz),
+      },
+      {
+        name: "QuizHeader",
+        text: () => Promise.resolve(QuizHeader),
+      },
+      {
+        name: "RecommendItems",
+        text: () => Promise.resolve(RecommendItems),
+      },
+      {
+        name: "Register",
+        text: () => Promise.resolve(Register),
+      },
+      {
+        name: "StarRates",
+        text: () => Promise.resolve(StarRates),
+      },
+    ];
 
-    fetch(`${directoryPath}filelist.json`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load file list");
-        }
-        return response.json();
-      })
-      .then((fileList) => {
-        console.log("fileList", fileList);
-        const promises = fileList.map((fileName: string) =>
-          fetch(`${directoryPath}${fileName}`).then((response) =>
-            response.text().then((content) => ({
-              source: fileName,
-              content: content,
-            }))
-          )
-        );
+    const promises = fileList.map((file) => {
+      return file.text().then((text) => ({
+        source: file.name,
+        content: text,
+      }));
+    });
 
-        // Process all files and extract hooks
-        Promise.all(promises).then((results) => {
-          const extractor = hookExtractor.current;
-
-          extractor.setProject(results);
-
-          const extractedData = extractor.toJson();
-          setData(JSON.parse(extractedData) as DataProps);
-          setIsVisualizationEnabled(true);
-        });
-      })
-      .catch((error) => {
-        console.error("Error loading project files:", error);
-      });
+    Promise.all(promises).then((results) => {
+      const extractor = hookExtractor.current;
+      extractor.setProject(results);
+      const extractedData = extractor.toJson();
+      setData(JSON.parse(extractedData) as DataProps);
+      // setIsVisualizationEnabled(true);
+    });
   }, []);
 
   // useEffect(() => {

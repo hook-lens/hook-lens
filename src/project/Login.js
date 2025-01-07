@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+const Login = `import React, { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import {
   auth,
@@ -70,5 +70,8 @@ function Login() {
     </div>
   );
 }
+
+export default Login;
+`;
 
 export default Login;

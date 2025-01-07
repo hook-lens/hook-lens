@@ -1,4 +1,4 @@
-import React from "react";
+const StarRates = `import React from "react";
 
 const StarRates = (starNum) => {
   const result = [];
@@ -11,4 +11,7 @@ const StarRates = (starNum) => {
   console.log(result);
   return result;
 };
+export default StarRates;
+`;
+
 export default StarRates;

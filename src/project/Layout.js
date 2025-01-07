@@ -1,4 +1,5 @@
-import { Link as RouterLink, Outlet } from "react-router-dom";
+const Layout =
+  `import { Link as RouterLink, Outlet } from "react-router-dom";
 import { Autocomplete, Button, TextField } from "@mui/material";
 import { logout } from "../Firebase/service";
 import SearchIcon from "@mui/icons-material/Search";
@@ -24,7 +25,9 @@ const Layout = () => {
       return;
     } else {
       const id = alcoholList[idx].id;
-      navigate(`/details/${id}`);
+      navigate(` +
+  "`/details/${id}`" +
+  `);
     }
   };
   alcoholNameList.sort();
@@ -140,5 +143,8 @@ const Layout = () => {
     </div>
   );
 };
+
+export default Layout;
+`;
 
 export default Layout;

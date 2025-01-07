@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+const KakaoShareButton = `import React, { useEffect } from "react";
 import { Button } from "@mui/material";
 
-const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
+const KakaoShareButton = () => {
   const url = window.location.href;
 
   const initKakao = () => {
@@ -17,13 +17,13 @@ const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
     initKakao();
   }, []);
 
-  const recommendKakao = () => {
+  const shareKakao = () => {
     window.Kakao.Link.sendDefault({
       objectType: "feed",
       content: {
-        title: `${alcohol.name} 을(를) 추천합니다!`,
-        description: description,
-        imageUrl: alcohol.imageUrl,
+        title: "나에게 맞는 전통술은?",
+        description: "간단한 퀴즈를 풀고 전통술을 추천 받아보세요",
+        imageUrl: "https://i.postimg.cc/jSzh3tZY/ddddd.png",
         link: {
           mobileWebUrl: url,
           webUrl: url,
@@ -33,9 +33,14 @@ const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
         profileText: "SNU Traditional Liquor",
         profileImageUrl: "https://i.postimg.cc/DZHJfSnN/alcohol-icon.png",
       },
+      social: {
+        likeCount: 286,
+        commentCount: 45,
+        sharedCount: 845,
+      },
       buttons: [
         {
-          title: buttonTitle,
+          title: "웹으로 보기",
           link: {
             mobileWebUrl: url,
             webUrl: url,
@@ -48,11 +53,14 @@ const KakaoRecommendButton = ({ description, buttonTitle, alcohol }) => {
   return (
     <Button
       style={{ color: "#000000", backgroundColor: "#f3dc04" }}
-      onClick={recommendKakao}
+      onClick={shareKakao}
     >
       카카오톡 공유하기
     </Button>
   );
 };
 
-export default KakaoRecommendButton;
+export default KakaoShareButton;
+`;
+
+export default KakaoShareButton;

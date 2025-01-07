@@ -1,4 +1,4 @@
-import { Autocomplete, TextField } from "@mui/material";
+const QuizHeader = `import { Autocomplete, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import alcohol_icon from "../Asset/alcohol-icon.png";
 import { Link as RouterLink } from "react-router-dom";
@@ -65,5 +65,8 @@ const QuizHeader = () => {
     </header>
   );
 };
+
+export default QuizHeader;
+`;
 
 export default QuizHeader;

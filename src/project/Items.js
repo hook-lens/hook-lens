@@ -1,4 +1,5 @@
-import * as React from "react";
+const Items =
+  `import * as React from "react";
 import "../Styles/Reset.css";
 import "../Styles/Home.css";
 import { Link as RouterLink } from "react-router-dom";
@@ -26,9 +27,9 @@ function Items({ currentItems, itemOffset }) {
         return (
           <RouterLink
             className="liquor-card"
-            to={`/details/${
-              alcoholList[parseInt(curr_page) * 28 - 28 + idx].id
-            }`}
+            to={` +
+  "`/details/${alcoholList[parseInt(curr_page) * 28 - 28 + idx].id}`" +
+  `}
           >
             <div
               className="liquor-div"
@@ -51,5 +52,8 @@ function Items({ currentItems, itemOffset }) {
     </>
   );
 }
+
+export default Items;
+`;
 
 export default Items;

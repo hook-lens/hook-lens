@@ -1,4 +1,4 @@
-import * as React from "react";
+const FilteredPaginatedItems = `import * as React from "react";
 import ReactPaginate from "react-paginate";
 import { useEffect, useRef } from "react";
 import FilteredItems from "./FilteredItems";
@@ -55,5 +55,8 @@ function FilteredPaginatedItems(props) {
     </>
   );
 }
+
+export default FilteredPaginatedItems;
+`;
 
 export default FilteredPaginatedItems;
