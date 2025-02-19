@@ -54,13 +54,37 @@ export function findRootComponents(
   return roots;
 }
 
-export function calcNewPosition(node: Node) {
-  const initialPosition = node.data.initialPosition as XYPosition;
-  const translatedPosition = node.data.translatedPosition as XYPosition;
-  return {
-    x: initialPosition.x + translatedPosition.x,
-    y: initialPosition.y + translatedPosition.y,
-  };
+export function calcNewPosition(target: Node, components: Node[]) {
+  const targetLevel = target.data.level as number;
+
+  const cousins = components.filter((n) => n.data.level === targetLevel - 1);
+  const maxCousinsWidth = cousins.reduce(
+    (acc, cur) =>
+      Math.max(
+        acc,
+        (cur.data.size as { width: number; height: number }).width || 0
+      ),
+    constants.baseWidth
+  );
+  const parentX = cousins.reduce((acc, cur) => cur.position.x as number, 0);
+  const gapX = cousins.some((n) => n.type === "expanded") ? 130 : 170;
+  const newX = cousins.length > 0 ? gapX + parentX + maxCousinsWidth : 0;
+
+  const adjacentSibiling =
+    components[components.findIndex((n) => n.id === target.id) - 1];
+  const gapY = components
+    .filter((n) => n.data.level === targetLevel)
+    .some((n) => n.type === "expanded")
+    ? 70
+    : 100;
+  const newY =
+    adjacentSibiling && adjacentSibiling.data.level === targetLevel
+      ? gapY +
+        adjacentSibiling.position.y +
+        (adjacentSibiling.data.size as { width: number; height: number }).height
+      : 0;
+
+  return { x: newX, y: newY };
 }
 
 export function calcNewStrokeWidth(edge: Edge) {
@@ -89,4 +113,16 @@ export function calcExpandedHeight(component: ComponentNode) {
       20,
     constants.baseWidth
   );
+}
+
+export function calcExpandedWidth(component: ComponentNode) {
+  const hasProps = component.props.length > 0 ? 1 : 0;
+  const hasState = component.states.length > 0 ? 1 : 0;
+  const hasEffect = component.effects.length > 0 ? 1 : 0;
+
+  if (hasEffect + hasProps + hasState === 0) {
+    return constants.baseWidth;
+  }
+
+  return constants.baseExpandedWidth * ((hasProps + hasState + hasEffect) / 3);
 }

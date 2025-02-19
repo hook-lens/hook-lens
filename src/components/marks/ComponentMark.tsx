@@ -62,7 +62,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
       <div
         className="node-content"
         style={{
-          borderRadius: 2,
+          borderRadius: 10,
           background: nodeStyles.component.color,
           width: width,
           height: baseWidth,
@@ -76,7 +76,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
             left: 0,
             width: baseWidth,
             height: baseWidth,
-            borderRadius: "2px 0 0 2px",
+            borderRadius: "10px 0 0 10px",
             background: nodeStyles.prop.color,
           }}
         />
@@ -89,7 +89,7 @@ export default function ComponentMark({ data }: NodeProps<ComponentMarkData>) {
             right: 0,
             width: baseWidth,
             height: baseWidth,
-            borderRadius: "0 2px 2px 0",
+            borderRadius: "0 10px 10px 0",
             background: nodeStyles.state.color,
           }}
         />

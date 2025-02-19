@@ -2,21 +2,19 @@ import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { Handle } from "@xyflow/react";
 
 import nodeStyles from "../../data/nodeStyles.json";
+import "./MarkStyle.css";
 
 type PropMarkData = Node<{ label: string }, "prop">;
 
 export default function PropMark({ data }: NodeProps<PropMarkData>) {
-  const width = 20;
-  const height = 20;
+  const width = 22;
+  const height = 22;
   return (
     <div className="prop">
       <div
-        className="label-content"
+        className="label-content prop-label"
         style={{
           position: "absolute",
-          top: -13,
-          textAlign: "left",
-          fontSize: 11,
         }}
       >
         {data.label}
@@ -26,7 +24,7 @@ export default function PropMark({ data }: NodeProps<PropMarkData>) {
         style={{
           width: width,
           height: height,
-          borderRadius: 2,
+          borderRadius: 5,
           background: nodeStyles.prop.color,
         }}
       />

@@ -1,6 +1,6 @@
 import { Edge, MarkerType, Node, Position } from "@xyflow/react";
 import { ComponentNode } from "../module/HookExtractor";
-import { isConcernedLink } from "./MarkUtils";
+import { isConcernedLink, calcExpandedWidth } from "./MarkUtils";
 
 import constants from "../data/constants.json";
 import edgeStyles from "../data/edgeStyles.json";
@@ -27,6 +27,8 @@ export function createPropNodes(component: ComponentNode) {
 }
 
 export function createStateNodes(component: ComponentNode) {
+  const width = calcExpandedWidth(component);
+
   return component.states.map((state, i) => ({
     id: state.id,
     hidden: true,
@@ -36,7 +38,7 @@ export function createStateNodes(component: ComponentNode) {
     style: { ...defaultAnimationStyle },
     data: { label: state.name },
     position: {
-      x: 300,
+      x: width - 22,
       y: topMargin + i * innerMarkGap,
     },
   }));
@@ -49,14 +51,14 @@ export function createEffectNodes(component: ComponentNode) {
     type: "effect",
     parentId: component.id,
     className: "",
-    style: { ...defaultAnimationStyle },
+    style: { ...defaultAnimationStyle, zIndex: 1000 },
     sourcePosition: Position.Right,
     data: {
-      label: effect.id,
+      label: effect.id.replace("effect", "Effect").replace("_", " "),
     },
     position: {
-      x: 125,
-      y: topMargin + innerMarkGap * i,
+      x: 140,
+      y: topMargin + 7 + i * innerMarkGap,
     },
   }));
 }

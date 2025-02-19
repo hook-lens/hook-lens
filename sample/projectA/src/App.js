@@ -10,20 +10,10 @@ import Liquor from "./Page/Liquor";
 import { useState } from "react";
 
 function App() {
-  const [pageCount, setPageCount] = useState(1);
+  const [pageCount, setPageCount] = useState(1); 
   const [currentAlcoholList, setCurrentAlcoholList] = useState([]);
   const [itemOffset, setItemOffset] = useState(0);
-  const [dummyAlcoholList, setDummyAlcoholList] = useState(
-    require("./Asset/dummy-alcohols.json")
-  );
   const [currentAlcoholId, setCurrentAlcoholId] = useState("");
-  const [category, setCategory] = useState(0);
-  const [filteredAlcoholList, setFilteredAlcoholList] = useState([]);
-  const [filteredItemOffset, setFilteredItemOffset] = useState(0);
-  const [filteredItemsId, setFilteredItemsId] = useState(0);
-  const [dummyQuizList, setDummyQuizList] = useState(
-    require("./Asset/dummy-quiz.json")
-  );
 
   return (
     <div className="App">
@@ -31,6 +21,18 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route element={<Layout />}>
+            <Route
+              path="/home"
+              element={
+                <Home
+                  pageCount={pageCount}
+                  setPageCount={setPageCount}
+                  currentAlcoholList={currentAlcoholList}
+                  setCurrentAlcoholList={setCurrentAlcoholList}
+                  itemOffset={itemOffset}
+                />
+              }
+            />
             <Route
               path="/liquor/:id"
               element={
@@ -41,20 +43,6 @@ function App() {
                   setFilteredItemOffset={setFilteredItemOffset}
                   filteredItemsId={filteredItemsId}
                   setFilteredItemsId={setFilteredItemsId}
-                />
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <Home
-                  pageCount={pageCount}
-                  setPageCount={setPageCount}
-                  currentAlcoholList={currentAlcoholList}
-                  setCurrentAlcoholList={setCurrentAlcoholList}
-                  itemOffset={itemOffset}
-                  setItemOffset={setItemOffset}
-                  category={category}
                 />
               }
             />

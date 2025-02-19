@@ -31,6 +31,8 @@ const Home = (props) => {
   const [user, loading, error] = useAuthState(auth);
   const navigate = useNavigate();
 
+  const [items, setItems] = useState(0);
+
   useEffect(() => {
     if (loading) {
       // maybe trigger a loading screen
@@ -38,7 +40,7 @@ const Home = (props) => {
     }
     if (!user) navigate("/");
   }, [user, loading]);
-
+  
   const alcoholList = useRecoilValue(alcoholListState);
   const randomHot = [];
   while (randomHot.length < 4) {
@@ -49,15 +51,11 @@ const Home = (props) => {
   }
 
   useEffect(() => {
-    if (props.category !== 0) {
-      const liquors = document.querySelector("#liquor-card-wrapper-text");
-      liquors.scrollIntoView();
-    }
-
     if (props.itemOffset > 0) {
       console.info("scrolling to top");
     }
-  }, [props.category, props.itemOffset]);
+    setItems(itemOffset);
+  }, [ props.itemOffset]);
 
   return (
     <div style={{ height: "100vh" }}>
@@ -234,7 +232,7 @@ const Home = (props) => {
       <h1 style={{ fontSize: "200%" }} id="liquor-card-wrapper-text">
         <span style={{ fontWeight: "bold" }}>전통주</span> 둘러보기
       </h1>
-      <PaginatedItems itemsPerPage={28} {...props} />
+      <PaginatedItems itemsPerPage={items} {...props} />
     </div>
   );
 };

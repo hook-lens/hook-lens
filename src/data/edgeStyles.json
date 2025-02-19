@@ -6,22 +6,22 @@
   },
   "effect": {
     "label": "Effect link",
-    "color": "#32ADE6",
+    "color": "#85b8e2",
     "style": "solid"
   },
   "stateValueProp": {
     "label": "State value - Prop link",
-    "color": "#34C759",
+    "color": "#b7de90",
     "style": "dashed"
   },
   "stateSetterProp": {
     "label": "State setter - Prop link",
-    "color": "#A2845E",
+    "color": "#eb9049",
     "style": "dashed"
   },
   "concernedLink": {
     "label": "Concerned link",
-    "color": "#FF3B30",
+    "color": "#b91c1c",
     "style": "dashed"
   }
 }

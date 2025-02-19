@@ -19,14 +19,12 @@ function PaginatedItems(props) {
   const setCurrentAlcoholList = props.setCurrentAlcoholList;
   const itemOffset = props.itemOffset;
   const setItemOffset = props.setItemOffset;
-  const category = props.category;
 
   useEffect(() => {
     const endOffset = itemOffset + itemsPerPage;
     setCurrentAlcoholList(alcoholList.slice(itemOffset, endOffset));
     setPageCount(Math.ceil(alcoholList.length / itemsPerPage));
-    category === "all" && scrollToRef.current.scrollIntoView();
-  }, [itemOffset, itemsPerPage, category]);
+  }, [itemOffset, itemsPerPage]);
   const handlePageClick = (event) => {
     const newOffset = (event.selected * itemsPerPage) % alcoholList.length;
     setItemOffset(newOffset);

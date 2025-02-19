@@ -1,18 +1,18 @@
 {
   "component": {
     "label": "Component",
-    "color": "#D9D9D9"
+    "color": "#ffffff"
   },
   "prop": {
     "label": "Prop",
-    "color": "#A2845E"
+    "color": "#eb9049"
   },
   "state": {
-    "label": "State / Setter",
-    "color": "#34C759"
+    "label": "State",
+    "color": "#b7de90"
   },
   "effect": {
     "label": "Effect",
-    "color": "#32ADE6"
+    "color": "#85b8e2"
   }
 }

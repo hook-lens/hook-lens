@@ -37,6 +37,7 @@ import {
 } from "../utils/MarkBuilder";
 import {
   calcExpandedHeight,
+  calcExpandedWidth,
   calcNewPosition,
   calcNewStrokeWidth,
   findRootComponents,
@@ -50,6 +51,7 @@ import nodeStyles from "../data/nodeStyles.json";
 import edgeStyles from "../data/edgeStyles.json";
 
 import "./MainView.css";
+import { base16AteliersulphurpoolLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export interface MainViewProps {
   hookExtractor: MutableRefObject<HookExtractor>;
@@ -79,7 +81,7 @@ const nodeTypes = {
 };
 
 const baseWidth = constants.baseWidth;
-const baseExpadnedWidth = constants.baseExpadnedWidth;
+const baseExpandedWidth = constants.baseExpandedWidth;
 const defaultAnimationStyle = constants.defaultAnimationStyle;
 
 function expandComponentNode(
@@ -89,35 +91,19 @@ function expandComponentNode(
 ) {
   const component = targetNode.data.component as ComponentNode;
   const expandedHeight = calcExpandedHeight(component);
+  const expandedWidth = calcExpandedWidth(component);
+
+  const targetComponent = componentNodes.find((n) => n.id === targetNode.id);
+  if (targetComponent) {
+    targetComponent.type = "expanded";
+    targetComponent.data.size = {
+      width: expandedWidth,
+      height: expandedHeight,
+    };
+  }
 
   componentNodes.forEach((node) => {
-    if (node.id === targetNode.id) {
-      node.type = "expanded";
-      node.data.size = {
-        width: baseExpadnedWidth,
-        height: expandedHeight,
-      };
-      node.position = calcNewPosition(node);
-      return;
-    }
-
-    if (
-      expandedLevels[targetNode.data.level as number] === 0 &&
-      (node.data.level as number) > (targetNode.data.level as number)
-    ) {
-      (node.data.translatedPosition as XYPosition).x +=
-        baseExpadnedWidth - baseWidth;
-    }
-
-    if (
-      node.data.level === targetNode.data.level &&
-      (node.data.index as number) > (targetNode.data.index as number)
-    ) {
-      (node.data.translatedPosition as XYPosition).y +=
-        (targetNode.data.size as MarkSize).height - baseWidth;
-    }
-
-    node.position = calcNewPosition(node);
+    node.position = calcNewPosition(node, componentNodes);
   });
 
   expandedLevels[targetNode.data.level as number]++;
@@ -128,31 +114,19 @@ function collapseComponentNode(
   componentNodes: Node[],
   expandedLevels: Record<number, number>
 ) {
+  const targetComponent = componentNodes.find((n) => n.id === targetNode.id);
+  if (targetComponent) {
+    targetComponent.type = "component";
+    targetComponent.data.size = {
+      width: baseWidth,
+      height: baseWidth,
+    };
+  }
+
   expandedLevels[targetNode.data.level as number]--;
   componentNodes.forEach((node) => {
-    if (node.id === targetNode.id) {
-      node.type = "component";
-      node.position = calcNewPosition(node);
-      return;
-    }
 
-    if (
-      expandedLevels[targetNode.data.level as number] === 0 &&
-      (node.data.level as number) > (targetNode.data.level as number)
-    ) {
-      (node.data.translatedPosition as XYPosition).x -=
-        baseExpadnedWidth - baseWidth;
-    }
-
-    if (
-      node.data.level === targetNode.data.level &&
-      (node.data.index as number) > (targetNode.data.index as number)
-    ) {
-      (node.data.translatedPosition as XYPosition).y -=
-        (targetNode.data.size as MarkSize).height - baseWidth;
-    }
-
-    node.position = calcNewPosition(node);
+    node.position = calcNewPosition(node, componentNodes);
   });
 }
 
@@ -420,6 +394,7 @@ const resetAllHighligtedMarks = ({
     e.className = "";
     e.style = {
       ...e.style,
+      filter: undefined,
       strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
     };
   });
@@ -427,6 +402,7 @@ const resetAllHighligtedMarks = ({
     e.className = "";
     e.style = {
       ...e.style,
+      filter: undefined,
       strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
     };
   });
@@ -434,6 +410,7 @@ const resetAllHighligtedMarks = ({
     e.className = "";
     e.style = {
       ...e.style,
+      filter: undefined,
       strokeWidth: calcNewStrokeWidth({ ...e, className: "" }),
     };
   });
@@ -758,7 +735,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
               e.style = {
                 ...e.style,
                 filter: e.className?.includes("refered")
-                  ? "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))"
+                  ? "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))"
                   : undefined,
                 strokeWidth: calcNewStrokeWidth(e),
               };
@@ -846,6 +823,7 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
             hasProps: node.props.length > 0,
             component: node,
             baseWidth,
+            size: { width: baseWidth, height: baseWidth },
             openCodeView,
           },
           position: { x: 0, y: 0 },
@@ -869,15 +847,25 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
       convertComponentToMark(root, 0);
     });
 
+    newNodes.sort((a, b) => {
+      const [aLevel, bLevel] = [a.data.level, b.data.level] as [number, number];
+      const [aIndex, bIndex] = [a.data.index, b.data.index] as [number, number];
+
+      if (aLevel === bLevel) {
+        return ((aIndex as number) - bIndex) as number;
+      }
+
+      return ((aLevel as number) - bLevel) as number;
+    });
+
     for (let level = 0; level <= maxLevel; level++) {
       expandedLevels.current[level] = 0;
       const levelNodes = newNodes.filter((node) => node.data.level === level);
       levelNodes.forEach((node, i) => {
-        const x = 10 + 200 * level;
-        const y = 10 + 100 * i;
+        const x = 170 * level;
+        const y = 100 * i;
         node.position = { x, y };
         node.data.initialPosition = { x, y };
-        node.data.translatedPosition = { x: 0, y: 0 };
       });
     }
     console.log("componentNodes", newNodes);
@@ -978,6 +966,9 @@ const MainView = ({ hookExtractor }: MainViewProps) => {
         nodeTypes={nodeTypes}
         minZoom={0.5}
         maxZoom={4}
+        style={{
+          background: "#fafafa",
+        }}
         fitView
         attributionPosition="bottom-left"
       >

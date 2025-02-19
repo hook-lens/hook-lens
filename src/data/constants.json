@@ -1,8 +1,8 @@
 {
-  "topMargin": 25,
+  "topMargin": 30,
   "baseWidth": 25,
-  "baseExpadnedWidth": 325,
-  "innerMarkGap": 45,
+  "baseExpandedWidth": 370,
+  "innerMarkGap": 50,
   "concernedEdgeWidth": 1.5,
   "edgeWidthPadding": 1,
   "defaultAnimationStyle": {

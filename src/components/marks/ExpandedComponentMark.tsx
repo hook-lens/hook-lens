@@ -57,7 +57,7 @@ export default function ExpandedComponentMark({
       <div
         className="node-content"
         style={{
-          borderRadius: 2,
+          borderRadius: 10,
           background: nodeStyles.component.color,
           width: data.size.width,
           height: data.size.height,

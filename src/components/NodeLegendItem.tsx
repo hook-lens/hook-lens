@@ -15,8 +15,9 @@ export default function NodeLegendItem(props: NodeLegendProps) {
     >
       <div
         style={{
-          borderRadius: 2,
+          borderRadius: 5,
           backgroundColor: props.color,
+          boxShadow: (props.label === "Component" ? "0 0 0 1px #e0e0e0 inset" : "none"),
           width: 30,
           height: 15,
         }}
