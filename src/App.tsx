@@ -14,7 +14,7 @@ function App() {
   const [data, setData] = useState<DataProps>();
 
   useEffect(() => {
-    const directoryPath = "/project/";
+    const directoryPath = `${process.env.PUBLIC_URL}/project/`;
 
     fetch(`${directoryPath}filelist.json`)
       .then((response) => {
