@@ -1,0 +1,19 @@
+[
+    "App.js",
+    "Details.js",
+    "FilteredItems.js",
+    "FilteredPaginatedItems.js",
+    "Home.js",
+    "Items.js",
+    "KakaoRecommendButton.js",
+    "KakaoShareButton.js",
+    "Layout.js",
+    "Liquor.js",
+    "Login.js",
+    "PaginatedItems.js",
+    "Quiz.js",
+    "QuizHeader.js",
+    "RecommendItems.js",
+    "Register.js",
+    "StarRates.js"
+]
