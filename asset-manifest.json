@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/hook-lens/static/css/main.bf6d25a1.css",
-    "main.js": "/hook-lens/static/js/main.b6d077ab.js",
+    "main.js": "/hook-lens/static/js/main.6c7419d2.js",
     "static/js/453.6aa24af5.chunk.js": "/hook-lens/static/js/453.6aa24af5.chunk.js",
     "index.html": "/hook-lens/index.html",
     "main.bf6d25a1.css.map": "/hook-lens/static/css/main.bf6d25a1.css.map",
-    "main.b6d077ab.js.map": "/hook-lens/static/js/main.b6d077ab.js.map",
+    "main.6c7419d2.js.map": "/hook-lens/static/js/main.6c7419d2.js.map",
     "453.6aa24af5.chunk.js.map": "/hook-lens/static/js/453.6aa24af5.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.bf6d25a1.css",
-    "static/js/main.b6d077ab.js"
+    "static/js/main.6c7419d2.js"
   ]
 }
