@@ -1,4 +1,4 @@
-import { Edge, Node, XYPosition } from "@xyflow/react";
+import { Edge, Node } from "@xyflow/react";
 import HookExtractor, { ComponentNode } from "../module/HookExtractor";
 
 import constants from "../data/constants.json";

@@ -16,7 +16,6 @@ import {
   useNodesState,
   useReactFlow,
   useUpdateNodeInternals,
-  XYPosition,
 } from "@xyflow/react";
 import HookExtractor, { ComponentNode } from "../module/HookExtractor";
 
@@ -51,7 +50,6 @@ import nodeStyles from "../data/nodeStyles.json";
 import edgeStyles from "../data/edgeStyles.json";
 
 import "./MainView.css";
-import { base16AteliersulphurpoolLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export interface MainViewProps {
   hookExtractor: MutableRefObject<HookExtractor>;
@@ -67,11 +65,6 @@ interface Marks {
   propEdges: Edge[];
 }
 
-interface MarkSize {
-  width: number;
-  height: number;
-}
-
 const nodeTypes = {
   component: ComponentMark,
   expanded: ExpandedComponentMark,
@@ -81,7 +74,6 @@ const nodeTypes = {
 };
 
 const baseWidth = constants.baseWidth;
-const baseExpandedWidth = constants.baseExpandedWidth;
 const defaultAnimationStyle = constants.defaultAnimationStyle;
 
 function expandComponentNode(
@@ -125,7 +117,6 @@ function collapseComponentNode(
 
   expandedLevels[targetNode.data.level as number]--;
   componentNodes.forEach((node) => {
-
     node.position = calcNewPosition(node, componentNodes);
   });
 }
