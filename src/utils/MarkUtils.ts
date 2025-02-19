@@ -67,7 +67,7 @@ export function calcNewPosition(target: Node, components: Node[]) {
     constants.baseWidth
   );
   const parentX = cousins.reduce((acc, cur) => cur.position.x as number, 0);
-  const gapX = cousins.some((n) => n.type === "expanded") ? 80 : 170;
+  const gapX = 170;
   const newX = cousins.length > 0 ? gapX + parentX + maxCousinsWidth : 0;
 
   const adjacentSibiling =
@@ -126,9 +126,9 @@ export function calcExpandedWidth(component: ComponentNode) {
     case 0:
       return constants.baseWidth;
     case 1:
-      return constants.baseExpandedWidth * 0.5;
+      return constants.baseExpandedWidth * 0.4;
     case 2:
-      return constants.baseExpandedWidth * 0.82;
+      return constants.baseExpandedWidth * 0.7;
   }
 
   return constants.baseExpandedWidth;

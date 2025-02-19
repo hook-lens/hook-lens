@@ -45,6 +45,18 @@ export function createStateNodes(component: ComponentNode) {
 }
 
 export function createEffectNodes(component: ComponentNode) {
+  const hasState = component.states.length > 0;
+  const hasProp = component.props.length > 0;
+
+  let effectX = constants.baseExpandedWidth * 0.5 - 40
+  if (!hasState && !hasProp) {
+    effectX = constants.baseExpandedWidth * 0.2 - 40;
+  } else if (hasState && !hasProp) {
+    effectX = 40;
+  } else if (!hasState && hasProp) {
+    effectX = constants.baseExpandedWidth * 0.7 - 120;
+  }
+
   return component.effects.map((effect, i) => ({
     id: effect.id,
     hidden: true,
@@ -57,7 +69,7 @@ export function createEffectNodes(component: ComponentNode) {
       label: effect.id.replace("effect", "Effect").replace("_", " "),
     },
     position: {
-      x: 140,
+      x: effectX,
       y: topMargin + 7 + i * innerMarkGap,
     },
   }));
