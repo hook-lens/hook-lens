@@ -1,0 +1,11 @@
+.animate-path {
+  stroke-dasharray: 4;
+  stroke-dashoffset: 0;
+  animation: dash 10s linear infinite reverse;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 100;
+  }
+}
